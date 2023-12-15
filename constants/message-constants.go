@@ -1,0 +1,8 @@
+package constants
+
+const (
+	MessageHeader = "vrata123"
+
+	MessageTypeLength   = 4
+	MessageLengthFormat = 3
+)
