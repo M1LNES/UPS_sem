@@ -2,6 +2,7 @@ package main
 
 import (
 	"UPS_sem/constants"
+	"UPS_sem/structures"
 	"bufio"
 	"fmt"
 	"net"
@@ -11,14 +12,16 @@ import (
 )
 
 const (
-	connHost = "0.0.0.0"
-	connPort = "10000"
-	connType = "tcp"
+	connHost = constants.ConnHost
+	connPort = constants.ConnPort
+	connType = constants.ConnType
 )
 
-var clientsMap = make(map[net.Conn]string)
+var clientsMap = make(map[net.Conn]structures.Player)
+var gameMap = make(map[string]structures.Game)
 
 func main() {
+	initialiseGameMap()
 	socket, err := net.Listen(connType, connHost+":"+connPort)
 
 	if err != nil {
@@ -40,6 +43,29 @@ func main() {
 	}
 }
 
+func initialiseGameMap() {
+	for i := 1; i <= constants.RoomsCount; i++ {
+		lobbyID := fmt.Sprintf("lobby%d", i)
+		gameMap[lobbyID] = structures.Game{
+			ID:      lobbyID,
+			Players: make(map[int]structures.Player),
+		}
+	}
+	printGameMap()
+}
+
+func printGameMap() {
+	fmt.Printf("Printing gaming lobbies: ")
+	for lobbyID, game := range gameMap {
+		fmt.Printf("Lobby ID: %s\n", lobbyID)
+		fmt.Printf("Number of Players: %d\n", len(game.Players))
+	}
+	fmt.Printf("Printing main lobby: ")
+	for client, username := range clientsMap {
+		fmt.Printf("Client: %s, Username: %s\n", client.RemoteAddr(), username)
+	}
+}
+
 func handleConnection(client net.Conn) {
 	defer client.Close()
 
@@ -48,7 +74,7 @@ func handleConnection(client net.Conn) {
 	for {
 		readBuffer, err := reader.ReadBytes('\n')
 		if err != nil {
-			fmt.Println("Zabijim: ", clientsMap[client])
+			fmt.Println("Zabijim: ", clientsMap[client].Nickname)
 			fmt.Println("Client disconnected.:", client)
 			return
 		}
@@ -77,9 +103,75 @@ func handleConnection(client net.Conn) {
 }
 
 func handleMessage(message string, client net.Conn) {
+	if _, exists := clientsMap[client]; !exists {
+
+		if createNickForConnection(client, message) {
+			fmt.Println("Client successfully added, his name: ", clientsMap[client].Nickname)
+		} else {
+			fmt.Println("Firstly you must identify yourself, aborting!")
+			client.Close()
+		}
+	} else {
+		messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
+
+		switch messageType {
+		case "join":
+			joinPlayerIntoGame(client, message)
+		case "info":
+			printGameMap()
+		default:
+			fmt.Println("Unknown command ", messageType)
+		}
+	}
+
+}
+
+func isPlayerNickInGames(nick string) bool {
+	for _, game := range gameMap {
+		for _, player := range game.Players {
+			if player.Nickname == nick {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isLobbyEmpty(game structures.Game) bool {
+	return len(game.Players) < constants.MaxPlayers
+}
+func joinPlayerIntoGame(client net.Conn, message string) {
+	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+	if game, ok := gameMap[lobbyName]; ok {
+		if isLobbyEmpty(game) {
+			if _, exists := clientsMap[client]; exists {
+				playerID := len(game.Players) + 1
+				game.Players[playerID] = clientsMap[client]
+
+				delete(clientsMap, client)
+
+				fmt.Printf("User %s joined lobby %s\n", clientsMap[client], lobbyName)
+			} else {
+				fmt.Println("User not found in clientsMap.")
+			}
+		} else {
+			fmt.Println("Lobby is not empty.")
+		}
+	} else {
+		fmt.Printf("Lobby %s not found in gameMap.\n", lobbyName)
+	}
+}
+
+func createNickForConnection(client net.Conn, message string) bool {
 	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 	if messageType == "nick" {
-		clientsMap[client] = message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+		clientsMap[client] = structures.Player{
+			Nickname: message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:],
+			Socket:   client,
+		}
+		return true
+	} else {
+		return false
 	}
 }
 
@@ -111,7 +203,6 @@ func isLengthValid(message string) bool {
 	// Extract the type part (next 4 characters)
 	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 
-	// Print or use the length, type, and the rest of the message as needed
 	fmt.Printf("Magic: %s\n", magic)
 	fmt.Printf("Length: %d\n", length)
 	fmt.Printf("Type: %s\n", messageType)
