@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
@@ -19,6 +20,8 @@ const (
 
 var clientsMap = make(map[net.Conn]structures.Player)
 var gameMap = make(map[string]structures.Game)
+var clientsMapMutex sync.Mutex
+var gameMapMutex sync.Mutex
 
 func main() {
 	initialiseGameMap()
@@ -44,6 +47,7 @@ func main() {
 }
 
 func initialiseGameMap() {
+	gameMapMutex.Lock()
 	for i := 1; i <= constants.RoomsCount; i++ {
 		lobbyID := fmt.Sprintf("lobby%d", i)
 		gameMap[lobbyID] = structures.Game{
@@ -51,18 +55,20 @@ func initialiseGameMap() {
 			Players: make(map[int]structures.Player),
 		}
 	}
-	printGameMap()
+	gameMapMutex.Unlock()
 }
 
 func printGameMap() {
-	fmt.Printf("Printing gaming lobbies: ")
+	fmt.Printf("Printing gaming lobbies: \n")
+	gameMapMutex.Lock()
 	for lobbyID, game := range gameMap {
 		fmt.Printf("Lobby ID: %s\n", lobbyID)
 		fmt.Printf("Number of Players: %d\n", len(game.Players))
 	}
-	fmt.Printf("Printing main lobby: ")
-	for client, username := range clientsMap {
-		fmt.Printf("Client: %s, Username: %s\n", client.RemoteAddr(), username)
+	gameMapMutex.Unlock()
+	fmt.Printf("Printing main lobby: \n")
+	for client := range clientsMap {
+		fmt.Printf("Client: %s, Username: %s\n", client.RemoteAddr(), clientsMap[client].Nickname)
 	}
 }
 
@@ -74,7 +80,9 @@ func handleConnection(client net.Conn) {
 	for {
 		readBuffer, err := reader.ReadBytes('\n')
 		if err != nil {
+			clientsMapMutex.Lock()
 			fmt.Println("Zabijim: ", clientsMap[client].Nickname)
+			clientsMapMutex.Unlock()
 			fmt.Println("Client disconnected.:", client)
 			return
 		}
@@ -101,10 +109,24 @@ func handleConnection(client net.Conn) {
 		client.Write(readBuffer)
 	}
 }
+func findPlayerBySocket(client net.Conn) bool {
+	gameMapMutex.Lock()
+	defer gameMapMutex.Unlock()
+	for _, gameState := range gameMap {
+		for _, player := range gameState.Players {
+			if player.Socket == client {
+				//return fmt.Sprintf("Player %s in game %s", player.Nickname, gameID), true
+				return true
+			}
+		}
+	}
+	return false
+	//return "", false
+}
 
 func handleMessage(message string, client net.Conn) {
-	if _, exists := clientsMap[client]; !exists {
-
+	clientsMapMutex.Lock()
+	if _, exists := clientsMap[client]; !exists && findPlayerBySocket(client) == false {
 		if createNickForConnection(client, message) {
 			fmt.Println("Client successfully added, his name: ", clientsMap[client].Nickname)
 		} else {
@@ -112,6 +134,7 @@ func handleMessage(message string, client net.Conn) {
 			client.Close()
 		}
 	} else {
+
 		messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 
 		switch messageType {
@@ -124,33 +147,24 @@ func handleMessage(message string, client net.Conn) {
 		}
 	}
 
-}
-
-func isPlayerNickInGames(nick string) bool {
-	for _, game := range gameMap {
-		for _, player := range game.Players {
-			if player.Nickname == nick {
-				return true
-			}
-		}
-	}
-	return false
+	clientsMapMutex.Unlock()
 }
 
 func isLobbyEmpty(game structures.Game) bool {
 	return len(game.Players) < constants.MaxPlayers
 }
 func joinPlayerIntoGame(client net.Conn, message string) {
+
 	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+	gameMapMutex.Lock()
 	if game, ok := gameMap[lobbyName]; ok {
 		if isLobbyEmpty(game) {
 			if _, exists := clientsMap[client]; exists {
 				playerID := len(game.Players) + 1
 				game.Players[playerID] = clientsMap[client]
-
+				fmt.Printf("User %s joined lobby %s\n", clientsMap[client].Nickname, lobbyName)
 				delete(clientsMap, client)
 
-				fmt.Printf("User %s joined lobby %s\n", clientsMap[client], lobbyName)
 			} else {
 				fmt.Println("User not found in clientsMap.")
 			}
@@ -160,6 +174,8 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 	} else {
 		fmt.Printf("Lobby %s not found in gameMap.\n", lobbyName)
 	}
+	gameMapMutex.Unlock()
+
 }
 
 func createNickForConnection(client net.Conn, message string) bool {
