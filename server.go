@@ -53,6 +53,9 @@ func initialiseGameMap() {
 		gameMap[lobbyID] = structures.Game{
 			ID:      lobbyID,
 			Players: make(map[int]structures.Player),
+			GameData: structures.GameState{
+				IsLobby: true,
+			},
 		}
 	}
 	gameMapMutex.Unlock()
@@ -62,7 +65,7 @@ func printGameMap() {
 	fmt.Printf("Printing gaming lobbies: \n")
 	gameMapMutex.Lock()
 	for lobbyID, game := range gameMap {
-		fmt.Printf("Lobby ID: %s\n", lobbyID)
+		fmt.Printf("Lobby ID: %s\n isLobby:%b", lobbyID, game.GameData.IsLobby)
 		fmt.Printf("Number of Players: %d\n", len(game.Players))
 	}
 	gameMapMutex.Unlock()
@@ -115,13 +118,24 @@ func findPlayerBySocket(client net.Conn) bool {
 	for _, gameState := range gameMap {
 		for _, player := range gameState.Players {
 			if player.Socket == client {
-				//return fmt.Sprintf("Player %s in game %s", player.Nickname, gameID), true
 				return true
 			}
 		}
 	}
 	return false
-	//return "", false
+}
+
+func findPlayerBySocketReturn(client net.Conn) *structures.Player {
+	gameMapMutex.Lock()
+	defer gameMapMutex.Unlock()
+	for _, gameState := range gameMap {
+		for _, player := range gameState.Players {
+			if player.Socket == client {
+				return &player
+			}
+		}
+	}
+	return nil
 }
 
 func handleMessage(message string, client net.Conn) {
@@ -136,18 +150,63 @@ func handleMessage(message string, client net.Conn) {
 	} else {
 
 		messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
+		extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 
 		switch messageType {
 		case "join":
 			joinPlayerIntoGame(client, message)
 		case "info":
 			printGameMap()
+		case "play":
+			startTheGame(client, extractedMessage)
 		default:
 			fmt.Println("Unknown command ", messageType)
 		}
 	}
 
 	clientsMapMutex.Unlock()
+}
+
+func startTheGame(client net.Conn, message string) {
+	player := findPlayerBySocketReturn(client)
+	lobby := findLobbyWithPlayer(*player)
+	if canLobbyBeStarted(*lobby) {
+		switchLobbyToGame(lobby.ID)
+	}
+}
+
+func canLobbyBeStarted(lobby structures.Game) bool {
+	gameMapMutex.Lock()
+	defer gameMapMutex.Unlock()
+	return len(lobby.Players) > 1 && lobby.GameData.IsLobby
+}
+
+func findLobbyWithPlayer(player structures.Player) *structures.Game {
+	gameMapMutex.Lock()
+	defer gameMapMutex.Unlock()
+	for _, game := range gameMap {
+		for _, p := range game.Players {
+			if p == player {
+				return &game
+			}
+		}
+	}
+	return nil
+}
+
+func switchLobbyToGame(lobbyID string) {
+	fmt.Println("Updatuju lobby: ", lobbyID)
+	gameMapMutex.Lock()
+	defer gameMapMutex.Unlock()
+
+	// Find the game in the map by its ID
+	if existingGame, ok := gameMap[lobbyID]; ok {
+		// Update the IsLobby field of the provided Game parameter
+		existingGame.GameData.IsLobby = false
+
+		// Update the game in the map
+		gameMap[lobbyID] = existingGame
+	}
 }
 
 func isLobbyEmpty(game structures.Game) bool {
@@ -175,7 +234,6 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 		fmt.Printf("Lobby %s not found in gameMap.\n", lobbyName)
 	}
 	gameMapMutex.Unlock()
-
 }
 
 func createNickForConnection(client net.Conn, message string) bool {
