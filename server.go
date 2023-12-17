@@ -231,6 +231,10 @@ func receiveLetter(client net.Conn, message string) {
 
 func movePlayersBackToMainLobby(game *structures.Game) {
 	for _, player := range game.Players {
+		_, err := player.Socket.Write([]byte("Game over, moving you into lobby\n"))
+		if err != nil {
+			fmt.Println("Error writing to server:", err.Error())
+		}
 		clientsMap[player.Socket] = player
 	}
 
@@ -264,6 +268,10 @@ func contains(slice []string, element string) bool {
 
 func startTheGame(client net.Conn, message string) {
 	player := findPlayerBySocketReturn(client)
+	if player == nil {
+		fmt.Println("Nenasel jsem daneho hrace, koncim")
+		return
+	}
 	lobby := findLobbyWithPlayer(*player)
 	if canLobbyBeStarted(*lobby) {
 		switchLobbyToGame(lobby.ID)
@@ -382,10 +390,12 @@ func isLengthValid(message string) bool {
 	// Extract the type part (next 4 characters)
 	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 
+	messageValue := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+
 	fmt.Printf("Magic: %s\n", magic)
 	fmt.Printf("Length: %d\n", length)
 	fmt.Printf("Type: %s\n", messageType)
-	fmt.Printf("Message: %s\n", message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:])
+	fmt.Printf("Message: %s\n", messageValue)
 
 	return true
 }
