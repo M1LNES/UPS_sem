@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 )
 
 const (
@@ -82,6 +83,7 @@ func initialiseGameMap() {
 			GameData: structures.GameState{
 				IsLobby: true,
 			},
+			TurnIndex: 0,
 		}
 	}
 	gameMapMutex.Unlock()
@@ -135,7 +137,7 @@ func handleConnection(client net.Conn) {
 		}
 
 		// Echo the message back to the client
-		client.Write(readBuffer)
+		//client.Write(readBuffer)
 	}
 }
 func findPlayerBySocket(client net.Conn) bool {
@@ -196,21 +198,68 @@ func handleMessage(message string, client net.Conn) {
 }
 
 func receiveLetter(client net.Conn, message string) {
-	fmt.Println("Jsem tu?")
-	fmt.Println("Lobby ID a zbytek: ", findLobbyWithPlayer(*findPlayerBySocketReturn(client)).ID, findLobbyWithPlayer(*findPlayerBySocketReturn(client)))
+
+	if findPlayerBySocketReturn(client) == nil {
+		fmt.Println("Nenasel jsem daneho hrace, koncim")
+		return
+	}
+
+	//fmt.Println("Lobby ID a zbytek: ", findLobbyWithPlayer(*findPlayerBySocketReturn(client)).ID, findLobbyWithPlayer(*findPlayerBySocketReturn(client)))
 	lobbyID := findLobbyWithPlayer(*findPlayerBySocketReturn(client)).ID
 	lobby, ok := gameMap[lobbyID]
 	if ok {
+		fmt.Println("Hadas vetu: ", lobby.GameData.SentenceToGuess)
 		gameMapMutex.Lock()
-		lobby.GameData.CharactersSelected = append(lobby.GameData.CharactersSelected, message)
-		gameMap[lobbyID] = lobby
+		if contains(lobby.GameData.CharactersSelected, message) {
+			fmt.Println("Uz obsahuje")
+		} else {
+			fmt.Println("Pridavam novy prvek.")
+			lobby.GameData.CharactersSelected = append(lobby.GameData.CharactersSelected, message)
+			gameMap[lobbyID] = lobby
+		}
+
+		if isWordGuessed(&lobby) {
+			fmt.Println("Uhodl jsi celou vetu")
+			movePlayersBackToMainLobby(&lobby)
+			lobby.GameData.IsLobby = true
+			gameMap[lobbyID] = lobby
+		}
 		gameMapMutex.Unlock()
 	}
-	newLobby := findLobbyWithPlayer(*findPlayerBySocketReturn(client))
-	fmt.Println("tak to zkusime, to novy pole vypada takhle: ", newLobby.GameData.CharactersSelected)
 
-	fmt.Println("ochazim")
+}
 
+func movePlayersBackToMainLobby(game *structures.Game) {
+	for _, player := range game.Players {
+		clientsMap[player.Socket] = player
+	}
+
+	game.Players = make(map[int]structures.Player)
+}
+
+func isWordGuessed(lobby *structures.Game) bool {
+	sentenceToGuess := strings.ToLower(lobby.GameData.SentenceToGuess)
+	charactersSelected := strings.ToLower(strings.Join(lobby.GameData.CharactersSelected, ""))
+	fmt.Printf("Characters selected %s Sentence %s \n", charactersSelected, sentenceToGuess)
+	for _, char := range sentenceToGuess {
+		if !unicode.IsLetter(char) {
+			continue // Skip non-letter characters
+		}
+
+		if !strings.ContainsRune(charactersSelected, unicode.ToLower(char)) {
+			return false
+		}
+	}
+	return true
+}
+
+func contains(slice []string, element string) bool {
+	for _, el := range slice {
+		if el == element {
+			return true
+		}
+	}
+	return false
 }
 
 func startTheGame(client net.Conn, message string) {
