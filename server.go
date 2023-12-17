@@ -5,11 +5,14 @@ import (
 	"UPS_sem/structures"
 	"bufio"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -20,11 +23,17 @@ const (
 
 var clientsMap = make(map[net.Conn]structures.Player)
 var gameMap = make(map[string]structures.Game)
+var (
+	dictionary      []string
+	dictionaryMutex sync.Mutex
+)
 var clientsMapMutex sync.Mutex
 var gameMapMutex sync.Mutex
 
 func main() {
 	initialiseGameMap()
+	createDictionary()
+
 	socket, err := net.Listen(connType, connHost+":"+connPort)
 
 	if err != nil {
@@ -44,6 +53,23 @@ func main() {
 
 		go handleConnection(client)
 	}
+}
+
+func createDictionary() {
+	content, _ := ioutil.ReadFile("dictionary/" + constants.DictionaryFile)
+
+	sentenceArray := strings.Split(string(content), "\n")
+
+	var cleanedSentences []string
+	for _, sentence := range sentenceArray {
+		if sentence != "" {
+			cleanedSentences = append(cleanedSentences, sentence)
+		}
+	}
+
+	dictionaryMutex.Lock()
+	dictionary = cleanedSentences
+	dictionaryMutex.Unlock()
 }
 
 func initialiseGameMap() {
@@ -159,6 +185,8 @@ func handleMessage(message string, client net.Conn) {
 			printGameMap()
 		case "play":
 			startTheGame(client, extractedMessage)
+		case "lett":
+			receiveLetter(client, extractedMessage)
 		default:
 			fmt.Println("Unknown command ", messageType)
 		}
@@ -167,11 +195,31 @@ func handleMessage(message string, client net.Conn) {
 	clientsMapMutex.Unlock()
 }
 
+func receiveLetter(client net.Conn, message string) {
+	fmt.Println("Jsem tu?")
+	fmt.Println("Lobby ID a zbytek: ", findLobbyWithPlayer(*findPlayerBySocketReturn(client)).ID, findLobbyWithPlayer(*findPlayerBySocketReturn(client)))
+	lobbyID := findLobbyWithPlayer(*findPlayerBySocketReturn(client)).ID
+	lobby, ok := gameMap[lobbyID]
+	if ok {
+		gameMapMutex.Lock()
+		lobby.GameData.CharactersSelected = append(lobby.GameData.CharactersSelected, message)
+		gameMap[lobbyID] = lobby
+		gameMapMutex.Unlock()
+	}
+	newLobby := findLobbyWithPlayer(*findPlayerBySocketReturn(client))
+	fmt.Println("tak to zkusime, to novy pole vypada takhle: ", newLobby.GameData.CharactersSelected)
+
+	fmt.Println("ochazim")
+
+}
+
 func startTheGame(client net.Conn, message string) {
 	player := findPlayerBySocketReturn(client)
 	lobby := findLobbyWithPlayer(*player)
 	if canLobbyBeStarted(*lobby) {
 		switchLobbyToGame(lobby.ID)
+	} else {
+		fmt.Println("Could not switch to game - not enough players yet.")
 	}
 }
 
@@ -199,14 +247,22 @@ func switchLobbyToGame(lobbyID string) {
 	gameMapMutex.Lock()
 	defer gameMapMutex.Unlock()
 
-	// Find the game in the map by its ID
 	if existingGame, ok := gameMap[lobbyID]; ok {
-		// Update the IsLobby field of the provided Game parameter
 		existingGame.GameData.IsLobby = false
-
-		// Update the game in the map
+		existingGame.GameData.SentenceToGuess = selectRandomSentence()
+		existingGame.GameData.CharactersSelected = []string{}
 		gameMap[lobbyID] = existingGame
+		for _, player := range gameMap[lobbyID].Players {
+			player.Socket.Write([]byte("hej vole, hrajes\n"))
+		}
+		return
 	}
+}
+
+func selectRandomSentence() string {
+	rand.Seed(time.Now().UnixNano())
+	index := rand.Intn(len(dictionary))
+	return dictionary[index]
 }
 
 func isLobbyEmpty(game structures.Game) bool {

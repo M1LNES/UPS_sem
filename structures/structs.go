@@ -9,9 +9,9 @@ type Game struct {
 }
 
 type GameState struct {
-	//ID      string
-	//Players map[int]Player
-	IsLobby bool
+	IsLobby            bool
+	SentenceToGuess    string
+	CharactersSelected []string
 }
 
 type Player struct {

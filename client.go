@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 const (
@@ -24,14 +25,23 @@ func main() {
 	}
 	defer server.Close()
 
+	go handleServerResponse(server)
+
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		fmt.Print("Text to send: ")
 		input, _ := reader.ReadString('\n')
 
-		server.Write([]byte(input))
+		// Trim the newline character from the input
+		input = strings.TrimRight(input, "\n")
 
+		server.Write([]byte(input + "\n"))
+	}
+}
+
+func handleServerResponse(server net.Conn) {
+	for {
 		message, err := bufio.NewReader(server).ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading from server:", err.Error())
