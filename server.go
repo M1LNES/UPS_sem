@@ -35,7 +35,7 @@ var letterPoints = constants.LetterPoints()
 var letterPointsMutex sync.Mutex
 
 func main() {
-	initialiseGameMap()
+	initializeGameMap()
 	createDictionary()
 
 	socket, err := net.Listen(connType, connHost+":"+connPort)
@@ -76,7 +76,7 @@ func createDictionary() {
 	dictionaryMutex.Unlock()
 }
 
-func initialiseGameMap() {
+func initializeGameMap() {
 	gameMapMutex.Lock()
 	for i := 1; i <= constants.RoomsCount; i++ {
 		lobbyID := fmt.Sprintf("lobby%d", i)
@@ -211,36 +211,66 @@ func receiveLetter(client net.Conn, message string) {
 		gameMapMutex.Lock()
 		lobby.GameData.PlayersPlayed[*player] = true
 		playerMadeMove(&lobby, *player, message)
-
-		if isWordGuessed(&lobby) {
-			fmt.Println("Uhodl jsi celou vetu")
-			printPlayerPoints(lobby.GameData.PlayerPoints)
-			movePlayersBackToMainLobby(&lobby)
-			lobby.GameData.IsLobby = true
-			gameMap[lobbyID] = lobby
-		}
-		gameMap[lobbyID] = lobby
 		gameMapMutex.Unlock()
 	}
 
 }
 
-func playerMadeMove(game *structures.Game, player structures.Player, letter string) {
-	game.GameData.PlayersPlayed[player] = true
-	game.GameData.PlayerLetters[player] = letter
-	allPlayersPlayed := true
-	for _, played := range game.GameData.PlayersPlayed {
-		if !played {
-			fmt.Println("Player did not play, his nick: ", player.Nickname)
-			allPlayersPlayed = false
-			break
+func startNewRound(game *structures.Game) {
+	game.GameData.SentenceToGuess = selectRandomSentence()
+	game.GameData.CharactersSelected = []string{}
+	game.GameData.PlayerLetters = make(map[structures.Player]string)
+
+	for _, player := range game.Players {
+		player.Socket.Write([]byte("New round has started\n"))
+		game.GameData.PlayersPlayed[player] = false
+	}
+}
+
+func didGameEnded(game *structures.Game) bool {
+	gameData := game.GameData
+
+	for _, points := range gameData.PlayerPoints {
+		if points >= constants.PointsNeededToWin {
+			return true
 		}
 	}
 
-	if allPlayersPlayed {
+	return false
+}
+func areAllPlayersPlayed(playersPlayed map[structures.Player]bool) bool {
+	for _, played := range playersPlayed {
+		if !played {
+			return false
+		}
+	}
+	return true
+}
+
+func playerMadeMove(game *structures.Game, player structures.Player, letter string) {
+	fmt.Println("Kdo hral: ", game.GameData.PlayersPlayed)
+	game.GameData.PlayersPlayed[player] = true
+	game.GameData.PlayerLetters[player] = letter
+
+	if areAllPlayersPlayed(game.GameData.PlayersPlayed) {
 		fmt.Println("All players played")
 		completeSentenceWithLetters(game)
-		initializeNextRound(game)
+		if didGameEnded(game) {
+			movePlayersBackToMainLobby(game)
+			game.GameData.IsLobby = true
+		} else {
+			if isSentenceGuessed(game) {
+				fmt.Println("Uhodl jsi celou vetu")
+				printPlayerPoints(game.GameData.PlayerPoints)
+				initializeNextRound(game)
+				startNewRound(game)
+			} else {
+				for _, player := range game.Players {
+					game.GameData.PlayersPlayed[player] = false
+				}
+			}
+			fmt.Println("Neuhodla se jeste cela veta, jedeme dal")
+		}
 	} else {
 		fmt.Println("Not all players played yet.")
 	}
@@ -322,9 +352,10 @@ func movePlayersBackToMainLobby(game *structures.Game) {
 	game.Players = make(map[int]structures.Player)
 }
 
-func isWordGuessed(lobby *structures.Game) bool {
+func isSentenceGuessed(lobby *structures.Game) bool {
 	sentenceToGuess := strings.ToLower(lobby.GameData.SentenceToGuess)
 	charactersSelected := strings.ToLower(strings.Join(lobby.GameData.CharactersSelected, ""))
+	fmt.Println("novy kolo: ", sentenceToGuess, charactersSelected)
 	fmt.Printf("Characters selected %s Sentence %s \n", charactersSelected, sentenceToGuess)
 	for _, char := range sentenceToGuess {
 		if !unicode.IsLetter(char) {
@@ -477,16 +508,6 @@ func isLengthValid(message string) bool {
 		fmt.Printf("LengthFromMessage:%d, CalculatedLength:%s\n", length, len(message)-len(constants.MessageHeader)-constants.MessageLengthFormat-constants.MessageTypeLength)
 		return false
 	}
-
-	// Extract the type part (next 4 characters)
-	//messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
-	//
-	//messageValue := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
-	//
-	//fmt.Printf("Magic: %s\n", magic)
-	//fmt.Printf("Length: %d\n", length)
-	//fmt.Printf("Type: %s\n", messageType)
-	//fmt.Printf("Message: %s\n", messageValue)
 
 	return true
 }
