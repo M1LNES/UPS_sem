@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -30,7 +29,6 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print("Text to send: ")
 		input, _ := reader.ReadString('\n')
 
 		// Trim the newline character from the input
@@ -48,6 +46,6 @@ func handleServerResponse(server net.Conn) {
 			break
 		}
 
-		log.Print("Server reply: ", message)
+		fmt.Print(message)
 	}
 }

@@ -167,6 +167,7 @@ func handleMessage(message string, client net.Conn) {
 	if _, exists := clientsMap[client]; !exists && findPlayerBySocket(client) == false {
 		if createNickForConnection(client, message) {
 			fmt.Println("Client successfully added, his name: ", clientsMap[client].Nickname)
+			sendLobbyInfo(client)
 		} else {
 			fmt.Println("Firstly you must identify yourself, aborting!")
 			client.Close()
@@ -191,6 +192,33 @@ func handleMessage(message string, client net.Conn) {
 	}
 
 	clientsMapMutex.Unlock()
+}
+
+func sendLobbyInfo(client net.Conn) {
+	magic := constants.MessageHeader
+	messageType := constants.LobbiesInfo
+	gameMapMutex.Lock()
+
+	var gameStrings []string
+	for _, game := range gameMap {
+		playerCount := len(game.Players)
+		isLobby := 0
+		if game.GameData.IsLobby {
+			isLobby = 1
+		}
+
+		gameString := fmt.Sprintf("%s|%d|%d|%d", game.ID, constants.MaxPlayers, playerCount, isLobby)
+		gameStrings = append(gameStrings, gameString)
+	}
+	gameMapMutex.Unlock()
+	message := strings.Join(gameStrings, ";")
+	messageLength := fmt.Sprintf("%03d", len(message))
+	finalMessage := magic + messageLength + messageType + message + "\n"
+	fmt.Println("Odesilam: ", finalMessage)
+	_, err := client.Write([]byte(finalMessage))
+	if err != nil {
+		return
+	}
 }
 
 func receiveLetter(client net.Conn, message string) {

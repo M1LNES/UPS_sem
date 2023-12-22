@@ -5,4 +5,6 @@ const (
 
 	MessageTypeLength   = 4
 	MessageLengthFormat = 3
+
+	LobbiesInfo = "lbin"
 )
