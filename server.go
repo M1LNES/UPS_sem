@@ -3,6 +3,7 @@ package main
 import (
 	"UPS_sem/constants"
 	"UPS_sem/structures"
+	"UPS_sem/utils"
 	"bufio"
 	"fmt"
 	"io/ioutil"
@@ -112,6 +113,7 @@ func handleConnection(client net.Conn) {
 
 	for {
 		readBuffer, err := reader.ReadBytes('\n')
+
 		if err != nil {
 			clientsMapMutex.Lock()
 			fmt.Println("Zabijim: ", clientsMap[client].Nickname)
@@ -119,7 +121,6 @@ func handleConnection(client net.Conn) {
 			fmt.Println("Client disconnected.:", client)
 			return
 		}
-
 		// Convert to string and remove trailing newline characters
 		message := strings.TrimRight(string(readBuffer), "\r\n")
 		fmt.Println("Msg:", message)
@@ -131,9 +132,6 @@ func handleConnection(client net.Conn) {
 			fmt.Println("Message structure is invalid. Closing connection.")
 			return
 		}
-
-		// Echo the message back to the client
-		//client.Write(readBuffer)
 	}
 }
 func findPlayerBySocket(client net.Conn) bool {
@@ -197,8 +195,8 @@ func handleMessage(message string, client net.Conn) {
 func sendLobbyInfo(client net.Conn) {
 	magic := constants.MessageHeader
 	messageType := constants.LobbiesInfo
-	gameMapMutex.Lock()
 
+	gameMapMutex.Lock()
 	var gameStrings []string
 	for _, game := range gameMap {
 		playerCount := len(game.Players)
@@ -210,6 +208,8 @@ func sendLobbyInfo(client net.Conn) {
 		gameString := fmt.Sprintf("%s|%d|%d|%d", game.ID, constants.MaxPlayers, playerCount, isLobby)
 		gameStrings = append(gameStrings, gameString)
 	}
+	fmt.Println("lol")
+
 	gameMapMutex.Unlock()
 	message := strings.Join(gameStrings, ";")
 	messageLength := fmt.Sprintf("%03d", len(message))
@@ -486,6 +486,8 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 				game.Players[playerID] = clientsMap[client]
 				fmt.Printf("User %s joined lobby %s\n", clientsMap[client].Nickname, lobbyName)
 				delete(clientsMap, client)
+				playerMovedToGameLobby(game.Players[playerID])
+				updateLobbyInfoInOtherClients()
 
 			} else {
 				fmt.Println("User not found in clientsMap.")
@@ -497,6 +499,18 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 		fmt.Printf("Lobby %s not found in gameMap.\n", lobbyName)
 	}
 	gameMapMutex.Unlock()
+}
+
+func updateLobbyInfoInOtherClients() {
+	for _, player := range clientsMap {
+		gameMapMutex.Unlock()
+		sendLobbyInfo(player.Socket)
+		gameMapMutex.Lock()
+	}
+}
+
+func playerMovedToGameLobby(player structures.Player) {
+	player.Socket.Write([]byte(utils.LobbyJoined(true)))
 }
 
 func createNickForConnection(client net.Conn, message string) bool {
