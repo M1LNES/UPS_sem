@@ -2,7 +2,10 @@ package utils
 
 import (
 	"UPS_sem/constants"
+	"UPS_sem/structures"
 	"fmt"
+	"strings"
+	"unicode"
 )
 
 // SENDING
@@ -29,7 +32,68 @@ func CanBeStarted(canBeStarted bool, currentPlayers int, maxPlayers int) string 
 		canBeStartedStr = "1"
 	}
 
-	messageBody := fmt.Sprintf("%s|%d|%d", canBeStartedStr, currentPlayers, maxPlayers)g
+	messageBody := fmt.Sprintf("%s|%d|%d", canBeStartedStr, currentPlayers, maxPlayers)
 	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
 	return message
+}
+
+func GameStartedWithInitInfo(game structures.Game) string {
+	magic := constants.MessageHeader
+	messageType := constants.GameStartedInit
+	players := getPlayerNicknames(game)
+	charactersSelectedSoFar := selectedCharactersFromGame(game)
+	maskedSentence := maskSentence(game.GameData.CharactersSelected, game.GameData.SentenceToGuess)
+	messageBody := fmt.Sprintf("%s|%s|%s", players, charactersSelectedSoFar, maskedSentence)
+	finalMessage := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	return finalMessage
+}
+
+func selectedCharactersFromGame(game structures.Game) string {
+	return strings.Join(game.GameData.CharactersSelected, "")
+}
+
+func getPlayerNicknames(game structures.Game) string {
+	var nicknames string
+
+	for _, player := range game.Players {
+		if nicknames != "" {
+			nicknames += ";"
+		}
+		nicknames += player.Nickname
+	}
+
+	return nicknames
+}
+
+func maskSentence(charactersSelected []string, sentenceToGuess string) string {
+	masked := ""
+
+	for _, char := range sentenceToGuess {
+		if unicode.IsLetter(char) {
+			lowerChar := unicode.ToLower(char)
+			lowerSelected := make([]string, len(charactersSelected))
+			for i, selectedChar := range charactersSelected {
+				lowerSelected[i] = strings.ToLower(selectedChar)
+			}
+
+			if contains(lowerSelected, string(lowerChar)) {
+				masked += string(char)
+			} else {
+				masked += "_"
+			}
+		} else {
+			masked += string(char)
+		}
+	}
+
+	return masked
+}
+
+func contains(slice []string, element string) bool {
+	for _, el := range slice {
+		if el == element {
+			return true
+		}
+	}
+	return false
 }

@@ -455,8 +455,9 @@ func switchLobbyToGame(lobbyID string) {
 		printPlayerPoints(existingGame.GameData.PlayerPoints)
 
 		gameMap[lobbyID] = existingGame
+		messageToClients := utils.GameStartedWithInitInfo(existingGame)
 		for _, player := range gameMap[lobbyID].Players {
-			player.Socket.Write([]byte("Game has started\n"))
+			player.Socket.Write([]byte(messageToClients))
 			existingGame.GameData.PlayersPlayed[player] = false
 		}
 
