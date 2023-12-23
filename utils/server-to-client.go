@@ -20,3 +20,15 @@ func LobbyJoined(success bool) string {
 	message := fmt.Sprintf("%s%03d%s%s", magic, len(successStr), messageType, successStr)
 	return message
 }
+
+func CanBeStarted(canBeStarted bool) string {
+	magic := constants.MessageHeader
+	messageType := constants.CanGameStart
+	canBeStartedStr := "0"
+	if canBeStarted {
+		canBeStartedStr = "1"
+	}
+
+	message := fmt.Sprintf("%s%03d%s%s", magic, len(canBeStartedStr), messageType, canBeStartedStr)
+	return message
+}

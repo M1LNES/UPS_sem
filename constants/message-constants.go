@@ -8,4 +8,5 @@ const (
 
 	LobbiesInfo  = "lbin"
 	LobbyJoining = "lbjn"
+	CanGameStart = "cngs"
 )

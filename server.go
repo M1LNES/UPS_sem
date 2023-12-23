@@ -171,7 +171,6 @@ func handleMessage(message string, client net.Conn) {
 			client.Close()
 		}
 	} else {
-
 		messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 		extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 
@@ -188,7 +187,6 @@ func handleMessage(message string, client net.Conn) {
 			fmt.Println("Unknown command ", messageType)
 		}
 	}
-
 	clientsMapMutex.Unlock()
 }
 
@@ -488,7 +486,7 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 				delete(clientsMap, client)
 				playerMovedToGameLobby(game.Players[playerID])
 				updateLobbyInfoInOtherClients()
-
+				sendInfoAboutStart(game)
 			} else {
 				fmt.Println("User not found in clientsMap.")
 			}
@@ -511,6 +509,15 @@ func updateLobbyInfoInOtherClients() {
 
 func playerMovedToGameLobby(player structures.Player) {
 	player.Socket.Write([]byte(utils.LobbyJoined(true)))
+
+}
+
+func sendInfoAboutStart(game structures.Game) {
+	for _, player := range game.Players {
+		gameMapMutex.Unlock()
+		player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game))))
+		gameMapMutex.Lock()
+	}
 }
 
 func createNickForConnection(client net.Conn, message string) bool {
