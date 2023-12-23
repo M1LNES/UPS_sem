@@ -21,7 +21,7 @@ func LobbyJoined(success bool) string {
 	return message
 }
 
-func CanBeStarted(canBeStarted bool) string {
+func CanBeStarted(canBeStarted bool, currentPlayers int, maxPlayers int) string {
 	magic := constants.MessageHeader
 	messageType := constants.CanGameStart
 	canBeStartedStr := "0"
@@ -29,6 +29,7 @@ func CanBeStarted(canBeStarted bool) string {
 		canBeStartedStr = "1"
 	}
 
-	message := fmt.Sprintf("%s%03d%s%s", magic, len(canBeStartedStr), messageType, canBeStartedStr)
+	messageBody := fmt.Sprintf("%s|%d|%d", canBeStartedStr, currentPlayers, maxPlayers)g
+	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
 	return message
 }

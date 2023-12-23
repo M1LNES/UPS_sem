@@ -515,7 +515,7 @@ func playerMovedToGameLobby(player structures.Player) {
 func sendInfoAboutStart(game structures.Game) {
 	for _, player := range game.Players {
 		gameMapMutex.Unlock()
-		player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game))))
+		player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game), len(game.Players), constants.MaxPlayers)))
 		gameMapMutex.Lock()
 	}
 }
