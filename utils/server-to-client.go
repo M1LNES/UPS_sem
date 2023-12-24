@@ -42,8 +42,9 @@ func GameStartedWithInitInfo(game structures.Game) string {
 	messageType := constants.GameStartedInit
 	players := getPlayerNicknames(game)
 	charactersSelectedSoFar := selectedCharactersFromGame(game)
+	hint := game.GameData.Hint
 	maskedSentence := maskSentence(game.GameData.CharactersSelected, game.GameData.SentenceToGuess)
-	messageBody := fmt.Sprintf("%s|%s|%s", players, charactersSelectedSoFar, maskedSentence)
+	messageBody := fmt.Sprintf("%s|%s|%s|%s", players, charactersSelectedSoFar, maskedSentence, hint)
 	finalMessage := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
 	return finalMessage
 }

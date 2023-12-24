@@ -11,6 +11,7 @@ type Game struct {
 type GameState struct {
 	IsLobby            bool
 	SentenceToGuess    string
+	Hint               string
 	CharactersSelected []string
 	PlayerPoints       map[Player]int
 	PlayersPlayed      map[Player]bool
@@ -20,4 +21,9 @@ type GameState struct {
 type Player struct {
 	Nickname string
 	Socket   net.Conn
+}
+
+type DictionaryItem struct {
+	Sentence string
+	Hint     string
 }

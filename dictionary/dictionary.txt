@@ -1,6 +1,5 @@
-Nejaky random vety.
-Franta nasel kolobezku.
-Nemam rad slunce.
-Dneska je patek.
-Mam se krasne.
-Skladej basne.
+Blue;color
+White;color
+Rainy;weather
+Washington;Capital City
+Czechia; country

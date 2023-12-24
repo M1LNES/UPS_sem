@@ -26,7 +26,7 @@ const (
 var clientsMap = make(map[net.Conn]structures.Player)
 var gameMap = make(map[string]structures.Game)
 var (
-	dictionary      []string
+	dictionary      []structures.DictionaryItem
 	dictionaryMutex sync.Mutex
 )
 var clientsMapMutex sync.Mutex
@@ -65,10 +65,17 @@ func createDictionary() {
 
 	sentenceArray := strings.Split(string(content), "\n")
 
-	var cleanedSentences []string
+	var cleanedSentences []structures.DictionaryItem
 	for _, sentence := range sentenceArray {
 		if sentence != "" {
-			cleanedSentences = append(cleanedSentences, sentence)
+			parts := strings.Split(sentence, ";")
+			if len(parts) == 2 {
+				item := structures.DictionaryItem{
+					Sentence: parts[0],
+					Hint:     parts[1],
+				}
+				cleanedSentences = append(cleanedSentences, item)
+			}
 		}
 	}
 
@@ -243,7 +250,9 @@ func receiveLetter(client net.Conn, message string) {
 }
 
 func startNewRound(game *structures.Game) {
-	game.GameData.SentenceToGuess = selectRandomSentence()
+	dictionaryItem := selectRandomSentence()
+	game.GameData.SentenceToGuess = dictionaryItem.Sentence
+	game.GameData.Hint = dictionaryItem.Hint
 	game.GameData.CharactersSelected = []string{}
 	game.GameData.PlayerLetters = make(map[structures.Player]string)
 
@@ -446,7 +455,9 @@ func switchLobbyToGame(lobbyID string) {
 
 	if existingGame, ok := gameMap[lobbyID]; ok {
 		existingGame.GameData.IsLobby = false
-		existingGame.GameData.SentenceToGuess = selectRandomSentence()
+		dictionaryItem := selectRandomSentence()
+		existingGame.GameData.SentenceToGuess = dictionaryItem.Sentence
+		existingGame.GameData.Hint = dictionaryItem.Hint
 		existingGame.GameData.CharactersSelected = []string{}
 		existingGame.GameData.PlayerPoints = make(map[structures.Player]int)
 		existingGame.GameData.PlayersPlayed = make(map[structures.Player]bool)
@@ -465,7 +476,7 @@ func switchLobbyToGame(lobbyID string) {
 	}
 }
 
-func selectRandomSentence() string {
+func selectRandomSentence() structures.DictionaryItem {
 	rand.Seed(time.Now().UnixNano())
 	index := rand.Intn(len(dictionary))
 	return dictionary[index]
