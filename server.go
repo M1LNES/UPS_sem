@@ -244,8 +244,8 @@ func receiveLetter(client net.Conn, message string) {
 		gameMapMutex.Lock()
 		lobby.GameData.PlayersPlayed[*player] = true
 		playerMadeMove(&lobby, *player, message)
-		gameMapMutex.Unlock()
 		gameMap[lobbyID] = lobby
+		gameMapMutex.Unlock()
 	}
 
 }
