@@ -40,7 +40,7 @@ func CanBeStarted(canBeStarted bool, currentPlayers int, maxPlayers int) string 
 func GameStartedWithInitInfo(game structures.Game) string {
 	magic := constants.MessageHeader
 	messageType := constants.GameStartedInit
-	players := getPlayerNicknames(game)
+	players := getPlayerNicknamesWithPoints(game)
 	charactersSelectedSoFar := selectedCharactersFromGame(game)
 	hint := game.GameData.Hint
 	maskedSentence := maskSentence(game.GameData.CharactersSelected, game.GameData.SentenceToGuess)
@@ -53,14 +53,14 @@ func selectedCharactersFromGame(game structures.Game) string {
 	return strings.Join(game.GameData.CharactersSelected, "")
 }
 
-func getPlayerNicknames(game structures.Game) string {
+func getPlayerNicknamesWithPoints(game structures.Game) string {
 	var nicknames string
 
 	for _, player := range game.Players {
 		if nicknames != "" {
 			nicknames += ";"
 		}
-		nicknames += player.Nickname
+		nicknames += fmt.Sprintf("%s:%d", player.Nickname, game.GameData.PlayerPoints[player])
 	}
 
 	return nicknames
