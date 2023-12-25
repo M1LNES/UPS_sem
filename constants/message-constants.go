@@ -10,4 +10,5 @@ const (
 	LobbyJoining    = "lbjn"
 	CanGameStart    = "cngs"
 	GameStartedInit = "gmst"
+	SentenceGuessed = "sege"
 )

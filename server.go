@@ -258,7 +258,7 @@ func startNewRound(game *structures.Game) {
 	game.GameData.PlayerLetters = make(map[structures.Player]string)
 
 	for _, player := range game.Players {
-		player.Socket.Write([]byte("New round has started\n"))
+		//player.Socket.Write([]byte("New round has started\n"))
 		game.GameData.PlayersPlayed[player] = false
 	}
 }
@@ -296,14 +296,16 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 			game.GameData.IsLobby = true
 		} else {
 			if isSentenceGuessed(game) {
-				fmt.Println("Uhodl jsi celou vetu")
+				sendSentenceGuessedMessage(game)
+				gameMapMutex.Unlock()
+				clientsMapMutex.Unlock()
+				time.Sleep(8 * time.Second)
+				clientsMapMutex.Lock()
+				gameMapMutex.Lock()
+
 				printPlayerPoints(game.GameData.PlayerPoints)
 				initializeNextRound(game)
 				startNewRound(game)
-			} else {
-				for _, player := range game.Players {
-					game.GameData.PlayersPlayed[player] = false
-				}
 			}
 			messageToClients := utils.GameStartedWithInitInfo(*game)
 			for _, player := range gameMap[game.ID].Players {
@@ -311,10 +313,17 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 				game.GameData.PlayersPlayed[player] = false
 			}
 
-			fmt.Println("Neuhodla se jeste cela veta, jedeme dal")
+			fmt.Println("Nikdo zatim nenasbiral dost bodu, hrajeme dal")
 		}
 	} else {
 		fmt.Println("Not all players played yet.")
+	}
+}
+
+func sendSentenceGuessedMessage(game *structures.Game) {
+	message := utils.CreateSentenceGuessedMessage(game)
+	for _, player := range game.Players {
+		player.Socket.Write([]byte(message))
 	}
 }
 

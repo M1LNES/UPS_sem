@@ -98,3 +98,14 @@ func contains(slice []string, element string) bool {
 	}
 	return false
 }
+
+func CreateSentenceGuessedMessage(game *structures.Game) string {
+	magic := constants.MessageHeader
+	messageType := constants.SentenceGuessed
+	hint := game.GameData.Hint
+	sentence := game.GameData.SentenceToGuess
+	playerAndPoints := getPlayerNicknamesWithPoints(*game)
+	messageBody := fmt.Sprintf("%s|%s|%s", hint, sentence, playerAndPoints)
+	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	return message
+}

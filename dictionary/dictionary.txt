@@ -2,4 +2,4 @@ Blue;color
 White;color
 Rainy;weather
 Washington;Capital City
-Czechia; country
+Czechia;country
