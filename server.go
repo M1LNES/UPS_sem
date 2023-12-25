@@ -245,6 +245,7 @@ func receiveLetter(client net.Conn, message string) {
 		lobby.GameData.PlayersPlayed[*player] = true
 		playerMadeMove(&lobby, *player, message)
 		gameMapMutex.Unlock()
+		gameMap[lobbyID] = lobby
 	}
 
 }
@@ -304,6 +305,12 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 					game.GameData.PlayersPlayed[player] = false
 				}
 			}
+			messageToClients := utils.GameStartedWithInitInfo(*game)
+			for _, player := range gameMap[game.ID].Players {
+				player.Socket.Write([]byte(messageToClients))
+				game.GameData.PlayersPlayed[player] = false
+			}
+
 			fmt.Println("Neuhodla se jeste cela veta, jedeme dal")
 		}
 	} else {
