@@ -220,7 +220,9 @@ func sendLobbyInfo(client net.Conn) {
 	messageLength := fmt.Sprintf("%03d", len(message))
 	finalMessage := magic + messageLength + messageType + message + "\n"
 	fmt.Println("Odesilam: ", finalMessage)
+	gameMapMutex.Lock()
 	_, err := client.Write([]byte(finalMessage))
+	gameMapMutex.Unlock()
 	if err != nil {
 		return
 	}

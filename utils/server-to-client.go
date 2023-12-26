@@ -20,7 +20,7 @@ func LobbyJoined(success bool) string {
 		successStr = "1"
 	}
 
-	message := fmt.Sprintf("%s%03d%s%s", magic, len(successStr), messageType, successStr)
+	message := fmt.Sprintf("%s%03d%s%s\n", magic, len(successStr), messageType, successStr)
 	return message
 }
 
@@ -33,7 +33,7 @@ func CanBeStarted(canBeStarted bool, currentPlayers int, maxPlayers int) string 
 	}
 
 	messageBody := fmt.Sprintf("%s|%d|%d", canBeStartedStr, currentPlayers, maxPlayers)
-	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	message := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return message
 }
 
@@ -45,7 +45,7 @@ func GameStartedWithInitInfo(game structures.Game) string {
 	hint := game.GameData.Hint
 	maskedSentence := maskSentence(game.GameData.CharactersSelected, game.GameData.SentenceToGuess)
 	messageBody := fmt.Sprintf("%s|%s|%s|%s", players, charactersSelectedSoFar, maskedSentence, hint)
-	finalMessage := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	finalMessage := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return finalMessage
 }
 
@@ -106,7 +106,7 @@ func CreateSentenceGuessedMessage(game *structures.Game) string {
 	sentence := game.GameData.SentenceToGuess
 	playerAndPoints := getPlayerNicknamesWithPoints(*game)
 	messageBody := fmt.Sprintf("%s|%s|%s", hint, sentence, playerAndPoints)
-	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	message := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return message
 }
 
@@ -132,6 +132,6 @@ func CreateGameEndingMessage(game *structures.Game) string {
 		winningNicknames = append(winningNicknames, player.Nickname)
 	}
 	messageBody := strings.Join(winningNicknames, ";")
-	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	message := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return message
 }
