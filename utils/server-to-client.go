@@ -109,3 +109,29 @@ func CreateSentenceGuessedMessage(game *structures.Game) string {
 	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
 	return message
 }
+
+func getWinningPlayers(game *structures.Game) []structures.Player {
+	var winningPlayers []structures.Player
+	gameData := game.GameData
+
+	for player, points := range gameData.PlayerPoints {
+		if points >= constants.PointsNeededToWin {
+			winningPlayers = append(winningPlayers, player)
+		}
+	}
+
+	return winningPlayers
+}
+
+func CreateGameEndingMessage(game *structures.Game) string {
+	magic := constants.MessageHeader
+	messageType := constants.GameEnding
+	winningPlayers := getWinningPlayers(game)
+	var winningNicknames []string
+	for _, player := range winningPlayers {
+		winningNicknames = append(winningNicknames, player.Nickname)
+	}
+	messageBody := strings.Join(winningNicknames, ";")
+	message := fmt.Sprintf("%s%03d%s%s", magic, len(messageBody), messageType, messageBody)
+	return message
+}

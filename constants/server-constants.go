@@ -6,6 +6,6 @@ const (
 	ConnType          = "tcp"
 	RoomsCount        = 4
 	MaxPlayers        = 4
-	PointsNeededToWin = 50
+	PointsNeededToWin = 20
 	DictionaryFile    = "dictionary.txt"
 )

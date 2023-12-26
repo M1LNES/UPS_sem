@@ -245,6 +245,10 @@ func receiveLetter(client net.Conn, message string) {
 		lobby.GameData.PlayersPlayed[*player] = true
 		playerMadeMove(&lobby, *player, message)
 		gameMap[lobbyID] = lobby
+		if lobby.GameData.IsLobby {
+			print("Hra asi skoncila, posilam nove informace typkum")
+			updateLobbyInfoInOtherClients()
+		}
 		gameMapMutex.Unlock()
 	}
 
@@ -292,6 +296,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 		fmt.Println("All players played")
 		completeSentenceWithLetters(game)
 		if didGameEnded(game) {
+			gameEndedMessage(game)
 			movePlayersBackToMainLobby(game)
 			game.GameData.IsLobby = true
 		} else {
@@ -317,6 +322,13 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 		}
 	} else {
 		fmt.Println("Not all players played yet.")
+	}
+}
+
+func gameEndedMessage(game *structures.Game) {
+	message := utils.CreateGameEndingMessage(game)
+	for _, player := range game.Players {
+		player.Socket.Write([]byte(message))
 	}
 }
 
@@ -393,10 +405,6 @@ func contains(slice []string, element string) bool {
 
 func movePlayersBackToMainLobby(game *structures.Game) {
 	for _, player := range game.Players {
-		_, err := player.Socket.Write([]byte("Game over, moving you into lobby\n"))
-		if err != nil {
-			fmt.Println("Error writing to server:", err.Error())
-		}
 		clientsMap[player.Socket] = player
 	}
 

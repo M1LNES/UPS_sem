@@ -11,4 +11,5 @@ const (
 	CanGameStart    = "cngs"
 	GameStartedInit = "gmst"
 	SentenceGuessed = "sege"
+	GameEnding      = "gmen"
 )
