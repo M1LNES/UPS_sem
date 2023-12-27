@@ -357,12 +357,14 @@ func completeSentenceWithLetters(game *structures.Game) {
 func calculatePoints(player *structures.Player, game *structures.Game) {
 	letter := game.GameData.PlayerLetters[*player]
 	result := calculatePointPerLetter(letter, game.GameData.SentenceToGuess)
-
-	if game.GameData.PlayerPoints[*player]+result < 1 {
-		game.GameData.PlayerPoints[*player] = 0
-	} else {
-		game.GameData.PlayerPoints[*player] += result
-	}
+	//
+	//if game.GameData.PlayerPoints[*player]+result < 1 {
+	//	game.GameData.PlayerPoints[*player] = 0
+	//} else {
+	//	game.GameData.PlayerPoints[*player] += result
+	//}
+	//
+	game.GameData.PlayerPoints[*player] += result
 
 	if contains(game.GameData.CharactersSelected, letter) {
 		fmt.Println("Uz obsahuje, nic nepridavam, je to prvek: ", letter)
@@ -389,11 +391,8 @@ func calculatePointPerLetter(character, sentence string) int {
 	letterPointsMutex.Lock()
 	defer letterPointsMutex.Unlock()
 
-	if count > 0 {
-		return letterPoints[characterLower] * count
-	} else {
-		return -letterPoints[characterLower]
-	}
+	return letterPoints[characterLower] * count
+
 }
 
 func contains(slice []string, element string) bool {

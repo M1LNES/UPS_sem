@@ -1,5 +1,40 @@
-Blue;color
-White;color
-Rainy;weather
-Washington;Capital City
-Czechia;country
+Czech Republic; Country in Central Europe.
+BMW; German luxury automobile manufacturer known for its sleek designs.
+Mona Lisa; Famous portrait painting by Leonardo da Vinci.
+Pyramids; Ancient structures in Egypt, including the Great Pyramid of Giza.
+Smartphone; Portable electronic device for communication and various applications.
+Shakespeare; Renowned English playwright and poet from the Renaissance.
+Everest; Earth's highest mountain, part of the Himalayas.
+Mozart; Influential Austrian composer from the Classical era.
+Espresso; Strong, concentrated coffee brewed by forcing hot water through finely-ground coffee beans.
+Sushi; Japanese dish consisting of vinegared rice accompanied by various ingredients like seafood and vegetables.
+Renaissance; Historical period known for a revival of art, literature, and learning.
+DNA; Molecule carrying genetic instructions for the development, functioning, and reproduction of living organisms.
+Van Gogh; Dutch post-impressionist painter known for works like "Starry Night."
+Niagara Falls; Famous waterfall located on the border between the United States and Canada.
+Chocolate Chip Cookie; Delicious baked treat with chocolate chips as a key ingredient.
+Artificial Intelligence; The development of computer systems that can perform tasks requiring human intelligence.
+Eiffel Tower; Iconic iron structure located in Paris, France.
+World War II; Global conflict from 1939 to 1945 involving major world powers.
+Solar System; System of celestial bodies, including the sun, planets, and moons, that orbit around the sun.
+Leonardo da Vinci; Italian polymath known for his contributions to art, science, and engineering.
+Mount Rushmore; Sculpture in the Black Hills of South Dakota featuring the faces of four U.S. presidents.
+Sherlock Holmes; Fictional detective created by Sir Arthur Conan Doyle.
+Great Wall of China; Ancient fortification, often considered one of the wonders of the world.
+Penguin; Flightless bird found in the Southern Hemisphere, known for its distinctive black and white coloring.
+Taj Mahal; Magnificent marble mausoleum in Agra, India.
+Jazz; Genre of music characterized by improvisation, syncopation, and a unique rhythm.
+Platypus; Unique mammal native to Australia, known for its duckbill and webbed feet.
+Redwood Forest; Forest in California featuring tall, majestic redwood trees.
+Hubble Space Telescope; Space telescope known for its contributions to astronomy.
+Renaissance Art; Artistic movement characterized by a renewed interest in classical styles and subjects.
+Mona Lisa; Famous portrait painting by Leonardo da Vinci.
+Volkswagen Beetle; Iconic compact car known for its distinctive rounded shape.
+Sherlock Holmes; Fictional detective created by Sir Arthur Conan Doyle.
+Acropolis; Ancient citadel on a rocky outcrop in Athens, Greece.
+Fossil; Preserved remains or traces of ancient organisms.
+Taj Mahal; Magnificent marble mausoleum in Agra, India.
+Fibonacci Sequence; Mathematical sequence where each number is the sum of the two preceding ones.
+Great Barrier Reef; Largest coral reef system located off the coast of Australia.
+Humpback Whale; Majestic marine mammal known for its distinctive hump and songs.
+Grand Canyon; Immense canyon carved by the Colorado River in Arizona, USA.
