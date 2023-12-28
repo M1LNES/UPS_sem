@@ -304,12 +304,6 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 		} else {
 			if isSentenceGuessed(game) {
 				sendSentenceGuessedMessage(game)
-				gameMapMutex.Unlock()
-				clientsMapMutex.Unlock()
-				time.Sleep(8 * time.Second)
-				clientsMapMutex.Lock()
-				gameMapMutex.Lock()
-
 				printPlayerPoints(game.GameData.PlayerPoints)
 				initializeNextRound(game)
 				startNewRound(game)
