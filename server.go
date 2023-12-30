@@ -72,6 +72,11 @@ func pingAllClients() {
 	clientsMapMutex.Lock()
 	message := utils.CreatePingMessage()
 	for i, player := range clientsMap {
+		if player.PingCounter > 0 && player.PingCounter < 10 {
+			fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
+		} else {
+			fmt.Printf("Hrac %s je v cajku.", player.Nickname)
+		}
 		player.Socket.Write([]byte(message))
 		player.PingCounter++
 		if player.PingCounter <= 10 {
@@ -87,6 +92,11 @@ func pingAllClients() {
 	gameMapMutex.Lock()
 	for gameID, game := range gameMap {
 		for playerID, player := range game.Players {
+			if player.PingCounter > 0 && player.PingCounter < 10 {
+				fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
+			} else {
+				fmt.Printf("Hrac %s je v cajku.", player.Nickname)
+			}
 			player.Socket.Write([]byte(message))
 			player.PingCounter++
 

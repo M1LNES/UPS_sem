@@ -9,3 +9,5 @@ const (
 	PointsNeededToWin = 50
 	DictionaryFile    = "dictionary.txt"
 )
+
+// 192.168.168.5
