@@ -95,6 +95,13 @@ func pingAllClients() {
 			} else {
 				fmt.Println("Disconnecting player: ", player.Nickname)
 				delete(gameMap[gameID].Players, playerID)
+				sendMessageToCancelGame(game)
+				clientsMapMutex.Lock()
+				movePlayersBackToMainLobby(&game)
+				clientsMapMutex.Unlock()
+
+				game.GameData.IsLobby = true
+				gameMap[gameID] = game
 				updateLobbyInfoInOtherClients()
 			}
 		}
@@ -102,6 +109,13 @@ func pingAllClients() {
 
 	gameMapMutex.Unlock()
 
+}
+
+func sendMessageToCancelGame(game structures.Game) {
+	message := utils.CreateCancelMessage()
+	for _, player := range game.Players {
+		player.Socket.Write([]byte(message))
+	}
 }
 
 func createDictionary() {
@@ -289,7 +303,6 @@ func sendLobbyInfo(client net.Conn) {
 		gameString := fmt.Sprintf("%s|%d|%d|%d", game.ID, constants.MaxPlayers, playerCount, isLobby)
 		gameStrings = append(gameStrings, gameString)
 	}
-	fmt.Println("lol")
 
 	gameMapMutex.Unlock()
 	message := strings.Join(gameStrings, ";")

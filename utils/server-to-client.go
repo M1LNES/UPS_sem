@@ -142,3 +142,10 @@ func CreatePingMessage() string {
 	message := fmt.Sprintf("%s%03d%s\n", magic, 0, messageType)
 	return message
 }
+
+func CreateCancelMessage() string {
+	magic := constants.MessageHeader
+	messageType := constants.Cancel
+	message := fmt.Sprintf("%s%03d%s\n", magic, 0, messageType)
+	return message
+}

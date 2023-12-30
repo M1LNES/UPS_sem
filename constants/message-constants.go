@@ -13,4 +13,5 @@ const (
 	SentenceGuessed = "sege"
 	GameEnding      = "gmen"
 	Ping            = "ping"
+	Cancel          = "cncl"
 )
