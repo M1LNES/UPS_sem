@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +38,8 @@ func main() {
 	initializeGameMap()
 	createDictionary()
 
+	go pingRoutine()
+
 	socket, err := net.Listen(connType, connHost+":"+connPort)
 
 	if err != nil {
@@ -58,6 +59,49 @@ func main() {
 
 		go handleConnection(client)
 	}
+}
+
+func pingRoutine() {
+	for {
+		pingAllClients()
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func pingAllClients() {
+	clientsMapMutex.Lock()
+	message := utils.CreatePingMessage()
+	for i, player := range clientsMap {
+		player.Socket.Write([]byte(message))
+		player.PingCounter++
+		if player.PingCounter <= 10 {
+			clientsMap[i] = player
+		} else {
+			fmt.Println("Odpojuju kokota: ", player.Nickname)
+			delete(clientsMap, player.Socket)
+			//updateLobbyInfoInOtherClients()
+		}
+	}
+	clientsMapMutex.Unlock()
+
+	gameMapMutex.Lock()
+	for gameID, game := range gameMap {
+		for playerID, player := range game.Players {
+			player.Socket.Write([]byte(message))
+			player.PingCounter++
+
+			if player.PingCounter <= 10 {
+				gameMap[gameID].Players[playerID] = player
+			} else {
+				fmt.Println("Disconnecting player: ", player.Nickname)
+				delete(gameMap[gameID].Players, playerID)
+				updateLobbyInfoInOtherClients()
+			}
+		}
+	}
+
+	gameMapMutex.Unlock()
+
 }
 
 func createDictionary() {
@@ -123,16 +167,16 @@ func handleConnection(client net.Conn) {
 
 		if err != nil {
 			clientsMapMutex.Lock()
-			fmt.Println("Zabijim: ", clientsMap[client].Nickname)
+			//fmt.Println("Zabijim: ", clientsMap[client].Nickname)
 			clientsMapMutex.Unlock()
-			fmt.Println("Client disconnected.:", client)
+			//fmt.Println("Client disconnected.:", client)
 			return
 		}
 		// Convert to string and remove trailing newline characters
 		message := strings.TrimRight(string(readBuffer), "\r\n")
 		fmt.Println("Msg:", message)
 
-		if isLengthValid(message) {
+		if utils.IsLengthValid(message) {
 			fmt.Println("Message structure is valid.")
 			handleMessage(message, client)
 		} else {
@@ -190,11 +234,43 @@ func handleMessage(message string, client net.Conn) {
 			startTheGame(client, extractedMessage)
 		case "lett":
 			receiveLetter(client, extractedMessage)
+		case "pong":
+			//handlePongMessage(client)
 		default:
 			fmt.Println("Unknown command ", messageType)
 		}
+		resetPlayerCounter(client)
 	}
 	clientsMapMutex.Unlock()
+}
+
+func handlePongMessage(client net.Conn) {
+	resetPlayerCounter(client)
+}
+
+func resetPlayerCounter(client net.Conn) {
+	for _, player := range clientsMap {
+		if player.Socket == client {
+			player.PingCounter = 0
+			clientsMap[client] = player
+			return
+		}
+	}
+
+	gameMapMutex.Lock()
+	for _, game := range gameMap {
+		for i, player := range game.Players {
+			if player.Socket == client {
+				player.PingCounter = 0
+				gameMap[game.ID].Players[i] = player
+				gameMapMutex.Unlock()
+				return
+			}
+		}
+
+	}
+	gameMapMutex.Unlock()
+
 }
 
 func sendLobbyInfo(client net.Conn) {
@@ -555,39 +631,12 @@ func createNickForConnection(client net.Conn, message string) bool {
 	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 	if messageType == "nick" {
 		clientsMap[client] = structures.Player{
-			Nickname: message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:],
-			Socket:   client,
+			Nickname:    message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:],
+			Socket:      client,
+			PingCounter: 0,
 		}
 		return true
 	} else {
 		return false
 	}
-}
-
-func isLengthValid(message string) bool {
-
-	if len(message) < (len(constants.MessageHeader) + constants.MessageTypeLength + constants.MessageLengthFormat) {
-		return false
-	}
-	// Magic
-	magic := message[:len(constants.MessageHeader)]
-
-	if magic != constants.MessageHeader {
-		fmt.Printf("Magic:%s, Constant:%s\n", magic, constants.MessageHeader)
-		return false
-	}
-	// Message Length
-	lengthStr := message[len(constants.MessageHeader) : len(constants.MessageHeader)+constants.MessageLengthFormat]
-	length, err := strconv.Atoi(lengthStr)
-	if err != nil {
-		return false
-	}
-
-	// is message length valid?
-	if length != len(message)-len(constants.MessageHeader)-constants.MessageLengthFormat-constants.MessageTypeLength {
-		fmt.Printf("LengthFromMessage:%d, CalculatedLength:%s\n", length, len(message)-len(constants.MessageHeader)-constants.MessageLengthFormat-constants.MessageTypeLength)
-		return false
-	}
-
-	return true
 }

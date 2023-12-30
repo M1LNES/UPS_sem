@@ -135,3 +135,10 @@ func CreateGameEndingMessage(game *structures.Game) string {
 	message := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return message
 }
+
+func CreatePingMessage() string {
+	magic := constants.MessageHeader
+	messageType := constants.Ping
+	message := fmt.Sprintf("%s%03d%s\n", magic, 0, messageType)
+	return message
+}

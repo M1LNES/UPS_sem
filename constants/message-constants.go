@@ -12,4 +12,5 @@ const (
 	GameStartedInit = "gmst"
 	SentenceGuessed = "sege"
 	GameEnding      = "gmen"
+	Ping            = "ping"
 )

@@ -19,8 +19,9 @@ type GameState struct {
 }
 
 type Player struct {
-	Nickname string
-	Socket   net.Conn
+	Nickname    string
+	Socket      net.Conn
+	PingCounter int
 }
 
 type DictionaryItem struct {
