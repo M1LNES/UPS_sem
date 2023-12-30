@@ -149,3 +149,11 @@ func CreateCancelMessage() string {
 	message := fmt.Sprintf("%s%03d%s\n", magic, 0, messageType)
 	return message
 }
+
+func CreateLobbyInfoMessage(gameStrings []string) string {
+	message := strings.Join(gameStrings, ";")
+	messageLength := fmt.Sprintf("%03d", len(message))
+	finalMessage := constants.MessageHeader + messageLength + constants.LobbiesInfo + message + "\n"
+
+	return finalMessage
+}

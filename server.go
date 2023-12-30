@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,17 +23,16 @@ const (
 	connType = constants.ConnType
 )
 
-var clientsMap = make(map[net.Conn]structures.Player)
-var gameMap = make(map[string]structures.Game)
 var (
-	dictionary      []structures.DictionaryItem
-	dictionaryMutex sync.Mutex
+	clientsMap        = make(map[net.Conn]structures.Player)
+	gameMap           = make(map[string]structures.Game)
+	dictionary        []structures.DictionaryItem
+	dictionaryMutex   sync.Mutex
+	clientsMapMutex   sync.Mutex
+	gameMapMutex      sync.Mutex
+	letterPoints      = constants.LetterPoints()
+	letterPointsMutex sync.Mutex
 )
-var clientsMapMutex sync.Mutex
-var gameMapMutex sync.Mutex
-
-var letterPoints = constants.LetterPoints()
-var letterPointsMutex sync.Mutex
 
 func main() {
 	initializeGameMap()
@@ -167,20 +167,6 @@ func initializeGameMap() {
 	gameMapMutex.Unlock()
 }
 
-func printGameMap() {
-	fmt.Printf("Printing gaming lobbies: \n")
-	gameMapMutex.Lock()
-	for lobbyID, game := range gameMap {
-		fmt.Printf("Lobby ID: %s\n isLobby:%b", lobbyID, game.GameData.IsLobby)
-		fmt.Printf("Number of Players: %d\n", len(game.Players))
-	}
-	gameMapMutex.Unlock()
-	fmt.Printf("Printing main lobby: \n")
-	for client := range clientsMap {
-		fmt.Printf("Client: %s, Username: %s\n", client.RemoteAddr(), clientsMap[client].Nickname)
-	}
-}
-
 func handleConnection(client net.Conn) {
 	//defer client.Close()
 
@@ -252,8 +238,6 @@ func handleMessage(message string, client net.Conn) {
 		switch messageType {
 		case "join":
 			joinPlayerIntoGame(client, message)
-		case "info":
-			printGameMap()
 		case "play":
 			startTheGame(client, extractedMessage)
 		case "lett":
@@ -298,9 +282,6 @@ func resetPlayerCounter(client net.Conn) {
 }
 
 func sendLobbyInfo(client net.Conn) {
-	magic := constants.MessageHeader
-	messageType := constants.LobbiesInfo
-
 	gameMapMutex.Lock()
 	var gameStrings []string
 	for _, game := range gameMap {
@@ -313,18 +294,13 @@ func sendLobbyInfo(client net.Conn) {
 		gameString := fmt.Sprintf("%s|%d|%d|%d", game.ID, constants.MaxPlayers, playerCount, isLobby)
 		gameStrings = append(gameStrings, gameString)
 	}
+	sort.Strings(gameStrings)
 
 	gameMapMutex.Unlock()
-	message := strings.Join(gameStrings, ";")
-	messageLength := fmt.Sprintf("%03d", len(message))
-	finalMessage := magic + messageLength + messageType + message + "\n"
-	fmt.Println("Odesilam: ", finalMessage)
+	finalMessage := utils.CreateLobbyInfoMessage(gameStrings)
 	gameMapMutex.Lock()
-	_, err := client.Write([]byte(finalMessage))
+	client.Write([]byte(finalMessage))
 	gameMapMutex.Unlock()
-	if err != nil {
-		return
-	}
 }
 
 func receiveLetter(client net.Conn, message string) {
@@ -363,7 +339,6 @@ func startNewRound(game *structures.Game) {
 	game.GameData.PlayerLetters = make(map[structures.Player]string)
 
 	for _, player := range game.Players {
-		//player.Socket.Write([]byte("New round has started\n"))
 		game.GameData.PlayersPlayed[player] = false
 	}
 }
@@ -389,12 +364,10 @@ func areAllPlayersPlayed(playersPlayed map[structures.Player]bool) bool {
 }
 
 func playerMadeMove(game *structures.Game, player structures.Player, letter string) {
-	fmt.Println("Kdo hral: ", game.GameData.PlayersPlayed)
 	game.GameData.PlayersPlayed[player] = true
 	game.GameData.PlayerLetters[player] = letter
 
 	if areAllPlayersPlayed(game.GameData.PlayersPlayed) {
-		fmt.Println("All players played")
 		completeSentenceWithLetters(game)
 		if didGameEnded(game) {
 			gameEndedMessage(game)
@@ -412,11 +385,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 				player.Socket.Write([]byte(messageToClients))
 				game.GameData.PlayersPlayed[player] = false
 			}
-
-			fmt.Println("Nikdo zatim nenasbiral dost bodu, hrajeme dal")
 		}
-	} else {
-		fmt.Println("Not all players played yet.")
 	}
 }
 
@@ -450,13 +419,6 @@ func completeSentenceWithLetters(game *structures.Game) {
 func calculatePoints(player *structures.Player, game *structures.Game) {
 	letter := game.GameData.PlayerLetters[*player]
 	result := calculatePointPerLetter(letter, game.GameData.SentenceToGuess)
-	//
-	//if game.GameData.PlayerPoints[*player]+result < 1 {
-	//	game.GameData.PlayerPoints[*player] = 0
-	//} else {
-	//	game.GameData.PlayerPoints[*player] += result
-	//}
-	//
 	game.GameData.PlayerPoints[*player] += result
 
 	if contains(game.GameData.CharactersSelected, letter) {
@@ -465,9 +427,6 @@ func calculatePoints(player *structures.Player, game *structures.Game) {
 		fmt.Println("Pridavam novy prvek, ktery tam jeste nebyl je jim: ", letter)
 		game.GameData.CharactersSelected = append(game.GameData.CharactersSelected, letter)
 	}
-
-	fmt.Printf("Za toto kolo dostal hrac %s celkem %d bodů. Momentálně má na kontě %d bodů \n", player.Nickname, result, game.GameData.PlayerPoints[*player])
-
 }
 
 func calculatePointPerLetter(character, sentence string) int {
@@ -567,7 +526,6 @@ func printPlayerPoints(playerPoints map[structures.Player]int) {
 }
 
 func switchLobbyToGame(lobbyID string) {
-	fmt.Println("Updatuju lobby: ", lobbyID)
 	gameMapMutex.Lock()
 	defer gameMapMutex.Unlock()
 
