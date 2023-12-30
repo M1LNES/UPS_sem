@@ -93,9 +93,9 @@ func pingAllClients() {
 	for gameID, game := range gamingLobbiesMap {
 		for playerID, player := range game.Players {
 			if player.PingCounter > 0 && player.PingCounter < 10 {
-				fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
+				utils.SendInfoAboutPendingUser(game, player)
 			} else {
-				fmt.Printf("Hrac %s je v cajku.", player.Nickname)
+				utils.SendInfoAboutConnectedUser(game, player)
 			}
 			player.Socket.Write([]byte(message))
 			player.PingCounter++

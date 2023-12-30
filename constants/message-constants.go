@@ -14,4 +14,6 @@ const (
 	GameEnding      = "gmen"
 	Ping            = "ping"
 	Cancel          = "cncl"
+	PendingUser     = "pndu"
+	ConnectedUser   = "uscn"
 )

@@ -157,3 +157,39 @@ func CreateLobbyInfoMessage(gameStrings []string) string {
 
 	return finalMessage
 }
+
+func SendInfoAboutPendingUser(game structures.Game, invalidPlayer structures.Player) {
+	message := createMessageAboutPendingUser(invalidPlayer)
+	for _, player := range game.Players {
+		if player != invalidPlayer {
+			player.Socket.Write([]byte(message))
+		}
+	}
+}
+
+func createMessageAboutPendingUser(player structures.Player) string {
+	magic := constants.MessageHeader
+	messageType := constants.PendingUser
+	messageLength := fmt.Sprintf("%03d", len(player.Nickname))
+	finalMessage := magic + messageLength + messageType + player.Nickname + "\n"
+
+	return finalMessage
+}
+
+func SendInfoAboutConnectedUser(game structures.Game, invalidPlayer structures.Player) {
+	message := createMessageAboutConnectedUser(invalidPlayer)
+	for _, player := range game.Players {
+		if player != invalidPlayer {
+			player.Socket.Write([]byte(message))
+		}
+	}
+}
+
+func createMessageAboutConnectedUser(player structures.Player) string {
+	magic := constants.MessageHeader
+	messageType := constants.ConnectedUser
+	messageLength := fmt.Sprintf("%03d", len(player.Nickname))
+	finalMessage := magic + messageLength + messageType + player.Nickname + "\n"
+
+	return finalMessage
+}
