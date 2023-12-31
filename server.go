@@ -241,7 +241,7 @@ func handleMessage(message string, client net.Conn) {
 		case "play":
 			startTheGame(client, extractedMessage)
 		case "lett":
-			receiveLetter(client, extractedMessage)
+			receiveLetter(client, extractedMessage, message)
 		case "pong":
 			//handlePongMessage(client)
 		default:
@@ -303,7 +303,7 @@ func sendLobbyInfo(client net.Conn) {
 	gamingLobbiesMapMutex.Unlock()
 }
 
-func receiveLetter(client net.Conn, message string) {
+func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	player := findPlayerBySocketReturn(client)
 	if len(message) != 1 {
 		fmt.Println("Nevalidni zprava more")
@@ -320,6 +320,7 @@ func receiveLetter(client net.Conn, message string) {
 	if ok {
 		gamingLobbiesMapMutex.Lock()
 		lobby.GameData.PlayersPlayed[*player] = true
+		player.Socket.Write([]byte(wholeMessage + "\n"))
 		playerMadeMove(&lobby, *player, message)
 		gamingLobbiesMap[lobbyID] = lobby
 		if lobby.GameData.IsLobby {
@@ -529,23 +530,23 @@ func switchLobbyToGame(lobbyID string) {
 	gamingLobbiesMapMutex.Lock()
 	defer gamingLobbiesMapMutex.Unlock()
 
-	if existingGame, ok := gamingLobbiesMap[lobbyID]; ok {
-		existingGame.GameData.IsLobby = false
+	if selectedGame, ok := gamingLobbiesMap[lobbyID]; ok {
+		selectedGame.GameData.IsLobby = false
 		dictionaryItem := selectRandomSentence()
-		existingGame.GameData.SentenceToGuess = dictionaryItem.Sentence
-		existingGame.GameData.Hint = dictionaryItem.Hint
-		existingGame.GameData.CharactersSelected = []string{}
-		existingGame.GameData.PlayerPoints = make(map[structures.Player]int)
-		existingGame.GameData.PlayersPlayed = make(map[structures.Player]bool)
-		existingGame.GameData.PlayerLetters = make(map[structures.Player]string)
-		initializePlayerPoints(&existingGame.GameData, existingGame.Players)
-		printPlayerPoints(existingGame.GameData.PlayerPoints)
+		selectedGame.GameData.SentenceToGuess = dictionaryItem.Sentence
+		selectedGame.GameData.Hint = dictionaryItem.Hint
+		selectedGame.GameData.CharactersSelected = []string{}
+		selectedGame.GameData.PlayerPoints = make(map[structures.Player]int)
+		selectedGame.GameData.PlayersPlayed = make(map[structures.Player]bool)
+		selectedGame.GameData.PlayerLetters = make(map[structures.Player]string)
+		initializePlayerPoints(&selectedGame.GameData, selectedGame.Players)
+		printPlayerPoints(selectedGame.GameData.PlayerPoints)
 
-		gamingLobbiesMap[lobbyID] = existingGame
-		messageToClients := utils.GameStartedWithInitInfo(existingGame)
+		gamingLobbiesMap[lobbyID] = selectedGame
+		messageToClients := utils.GameStartedWithInitInfo(selectedGame)
 		for _, player := range gamingLobbiesMap[lobbyID].Players {
 			player.Socket.Write([]byte(messageToClients))
-			existingGame.GameData.PlayersPlayed[player] = false
+			selectedGame.GameData.PlayersPlayed[player] = false
 		}
 
 		return
