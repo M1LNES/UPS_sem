@@ -60,7 +60,7 @@ func getPlayerNicknamesWithPoints(game structures.Game) string {
 		if nicknames != "" {
 			nicknames += ";"
 		}
-		nicknames += fmt.Sprintf("%s:%d", player.Nickname, game.GameData.PlayerPoints[player])
+		nicknames += fmt.Sprintf("%s:%d", player.Nickname, game.GameData.PlayerPoints[player.Nickname])
 	}
 
 	return nicknames
@@ -110,8 +110,8 @@ func CreateSentenceGuessedMessage(game *structures.Game) string {
 	return message
 }
 
-func getWinningPlayers(game *structures.Game) []structures.Player {
-	var winningPlayers []structures.Player
+func getWinningPlayers(game *structures.Game) []string {
+	var winningPlayers []string
 	gameData := game.GameData
 
 	for player, points := range gameData.PlayerPoints {
@@ -127,11 +127,7 @@ func CreateGameEndingMessage(game *structures.Game) string {
 	magic := constants.MessageHeader
 	messageType := constants.GameEnding
 	winningPlayers := getWinningPlayers(game)
-	var winningNicknames []string
-	for _, player := range winningPlayers {
-		winningNicknames = append(winningNicknames, player.Nickname)
-	}
-	messageBody := strings.Join(winningNicknames, ";")
+	messageBody := strings.Join(winningPlayers, ";")
 	message := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return message
 }
@@ -191,5 +187,21 @@ func createMessageAboutConnectedUser(player structures.Player) string {
 	messageLength := fmt.Sprintf("%03d", len(player.Nickname))
 	finalMessage := magic + messageLength + messageType + player.Nickname + "\n"
 
+	return finalMessage
+}
+
+func CreateResendStateMessage(game *structures.Game, player structures.Player) string {
+	magic := constants.MessageHeader
+	messageType := constants.GameStartedInit
+	players := getPlayerNicknamesWithPoints(*game)
+	charactersSelectedSoFar := selectedCharactersFromGame(*game)
+	hint := game.GameData.Hint
+	status := 0 // did not play
+	if game.GameData.PlayersPlayed[player.Nickname] {
+		status = 1 // already played
+	}
+	maskedSentence := maskSentence(game.GameData.CharactersSelected, game.GameData.SentenceToGuess)
+	messageBody := fmt.Sprintf("%s|%s|%s|%s|%d", players, charactersSelectedSoFar, maskedSentence, hint, status)
+	finalMessage := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return finalMessage
 }

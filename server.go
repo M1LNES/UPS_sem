@@ -70,6 +70,8 @@ func pingRoutine() {
 
 func pingAllClients() {
 	mainLobbyMapMutex.Lock()
+	gamingLobbiesMapMutex.Lock()
+
 	message := utils.CreatePingMessage()
 	for i, player := range mainLobbyMap {
 		if player.PingCounter > 0 && player.PingCounter < 10 {
@@ -83,13 +85,12 @@ func pingAllClients() {
 			mainLobbyMap[i] = player
 		} else {
 			fmt.Println("Odpojuju kokota: ", player.Nickname)
+			player.Socket.Close()
 			delete(mainLobbyMap, player.Socket)
 			//updateLobbyInfoInOtherClients()
 		}
 	}
-	mainLobbyMapMutex.Unlock()
 
-	gamingLobbiesMapMutex.Lock()
 	for gameID, game := range gamingLobbiesMap {
 		for playerID, player := range game.Players {
 			if player.PingCounter > 0 && player.PingCounter < 10 {
@@ -104,11 +105,10 @@ func pingAllClients() {
 				gamingLobbiesMap[gameID].Players[playerID] = player
 			} else {
 				fmt.Println("Disconnecting player: ", player.Nickname)
+				gamingLobbiesMap[gameID].Players[playerID].Socket.Close()
 				delete(gamingLobbiesMap[gameID].Players, playerID)
 				sendMessageToCancelGame(game)
-				mainLobbyMapMutex.Lock()
 				movePlayersBackToMainLobby(&game)
-				mainLobbyMapMutex.Unlock()
 
 				game.GameData.IsLobby = true
 				gamingLobbiesMap[gameID] = game
@@ -118,7 +118,7 @@ func pingAllClients() {
 	}
 
 	gamingLobbiesMapMutex.Unlock()
-
+	mainLobbyMapMutex.Unlock()
 }
 
 func sendMessageToCancelGame(game structures.Game) {
@@ -168,7 +168,7 @@ func initializegamingLobbiesMap() {
 }
 
 func handleConnection(client net.Conn) {
-	//defer client.Close()
+	defer client.Close()
 
 	reader := bufio.NewReader(client)
 
@@ -176,9 +176,9 @@ func handleConnection(client net.Conn) {
 		readBuffer, err := reader.ReadBytes('\n')
 
 		if err != nil {
-			mainLobbyMapMutex.Lock()
+			//mainLobbyMapMutex.Lock()
 			//fmt.Println("Zabijim: ", mainLobbyMap[client].Nickname)
-			mainLobbyMapMutex.Unlock()
+			//mainLobbyMapMutex.Unlock()
 			//fmt.Println("Client disconnected.:", client)
 			return
 		}
@@ -196,8 +196,7 @@ func handleConnection(client net.Conn) {
 	}
 }
 func findPlayerBySocket(client net.Conn) bool {
-	gamingLobbiesMapMutex.Lock()
-	defer gamingLobbiesMapMutex.Unlock()
+
 	for _, gameState := range gamingLobbiesMap {
 		for _, player := range gameState.Players {
 			if player.Socket == client {
@@ -209,8 +208,6 @@ func findPlayerBySocket(client net.Conn) bool {
 }
 
 func findPlayerBySocketReturn(client net.Conn) *structures.Player {
-	gamingLobbiesMapMutex.Lock()
-	defer gamingLobbiesMapMutex.Unlock()
 	for _, gameState := range gamingLobbiesMap {
 		for _, player := range gameState.Players {
 			if player.Socket == client {
@@ -222,6 +219,7 @@ func findPlayerBySocketReturn(client net.Conn) *structures.Player {
 }
 
 func handleMessage(message string, client net.Conn) {
+	gamingLobbiesMapMutex.Lock()
 	mainLobbyMapMutex.Lock()
 	if _, exists := mainLobbyMap[client]; !exists && findPlayerBySocket(client) == false {
 		if createNickForConnection(client, message) {
@@ -244,12 +242,26 @@ func handleMessage(message string, client net.Conn) {
 			receiveLetter(client, extractedMessage, message)
 		case "pong":
 			//handlePongMessage(client)
+		//case "retr":
+		//	resendClientInfo(client, message)
 		default:
 			fmt.Println("Unknown command ", messageType)
 		}
 		resetPlayerCounter(client)
 	}
+	gamingLobbiesMapMutex.Unlock()
 	mainLobbyMapMutex.Unlock()
+}
+
+func resendClientInfo(client net.Conn, message string) {
+	player := findPlayerBySocketReturn(client)
+	lobbyID := findLobbyWithPlayer(*player).ID
+
+	lobby, _ := gamingLobbiesMap[lobbyID]
+
+	messageFinal := utils.CreateResendStateMessage(&lobby, *player)
+	fmt.Println("POSILAM ZPRAVU O NOVYM STAVU: ", messageFinal)
+	client.Write([]byte(messageFinal))
 }
 
 func handlePongMessage(client net.Conn) {
@@ -265,24 +277,20 @@ func resetPlayerCounter(client net.Conn) {
 		}
 	}
 
-	gamingLobbiesMapMutex.Lock()
 	for _, game := range gamingLobbiesMap {
 		for i, player := range game.Players {
 			if player.Socket == client {
 				player.PingCounter = 0
 				gamingLobbiesMap[game.ID].Players[i] = player
-				gamingLobbiesMapMutex.Unlock()
 				return
 			}
 		}
 
 	}
-	gamingLobbiesMapMutex.Unlock()
 
 }
 
 func sendLobbyInfo(client net.Conn) {
-	gamingLobbiesMapMutex.Lock()
 	var gameStrings []string
 	for _, game := range gamingLobbiesMap {
 		playerCount := len(game.Players)
@@ -296,11 +304,8 @@ func sendLobbyInfo(client net.Conn) {
 	}
 	sort.Strings(gameStrings)
 
-	gamingLobbiesMapMutex.Unlock()
 	finalMessage := utils.CreateLobbyInfoMessage(gameStrings)
-	gamingLobbiesMapMutex.Lock()
 	client.Write([]byte(finalMessage))
-	gamingLobbiesMapMutex.Unlock()
 }
 
 func receiveLetter(client net.Conn, message string, wholeMessage string) {
@@ -316,10 +321,10 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	}
 
 	lobbyID := findLobbyWithPlayer(*player).ID
+
 	lobby, ok := gamingLobbiesMap[lobbyID]
 	if ok {
-		gamingLobbiesMapMutex.Lock()
-		lobby.GameData.PlayersPlayed[*player] = true
+		//lobby.GameData.PlayersPlayed[*player] = true
 		player.Socket.Write([]byte(wholeMessage + "\n"))
 		playerMadeMove(&lobby, *player, message)
 		gamingLobbiesMap[lobbyID] = lobby
@@ -327,9 +332,7 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 			print("Hra asi skoncila, posilam nove informace typkum")
 			updateLobbyInfoInOtherClients()
 		}
-		gamingLobbiesMapMutex.Unlock()
 	}
-
 }
 
 func startNewRound(game *structures.Game) {
@@ -337,10 +340,10 @@ func startNewRound(game *structures.Game) {
 	game.GameData.SentenceToGuess = dictionaryItem.Sentence
 	game.GameData.Hint = dictionaryItem.Hint
 	game.GameData.CharactersSelected = []string{}
-	game.GameData.PlayerLetters = make(map[structures.Player]string)
+	game.GameData.PlayerLetters = make(map[string]string)
 
 	for _, player := range game.Players {
-		game.GameData.PlayersPlayed[player] = false
+		game.GameData.PlayersPlayed[player.Nickname] = false
 	}
 }
 
@@ -355,7 +358,7 @@ func didGameEnded(game *structures.Game) bool {
 
 	return false
 }
-func areAllPlayersPlayed(playersPlayed map[structures.Player]bool) bool {
+func areAllPlayersPlayed(playersPlayed map[string]bool) bool {
 	for _, played := range playersPlayed {
 		if !played {
 			return false
@@ -365,11 +368,13 @@ func areAllPlayersPlayed(playersPlayed map[structures.Player]bool) bool {
 }
 
 func playerMadeMove(game *structures.Game, player structures.Player, letter string) {
-	game.GameData.PlayersPlayed[player] = true
-	game.GameData.PlayerLetters[player] = letter
+	game.GameData.PlayersPlayed[player.Nickname] = true
+	game.GameData.PlayerLetters[player.Nickname] = letter
 
 	if areAllPlayersPlayed(game.GameData.PlayersPlayed) {
 		completeSentenceWithLetters(game)
+		fmt.Println("Doplnil jsem vetu pismenky :)!")
+
 		if didGameEnded(game) {
 			gameEndedMessage(game)
 			movePlayersBackToMainLobby(game)
@@ -384,9 +389,11 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 			messageToClients := utils.GameStartedWithInitInfo(*game)
 			for _, player := range gamingLobbiesMap[game.ID].Players {
 				player.Socket.Write([]byte(messageToClients))
-				game.GameData.PlayersPlayed[player] = false
+				game.GameData.PlayersPlayed[player.Nickname] = false
 			}
 		}
+	} else {
+		fmt.Println("Jeste nehrali vsichni!")
 	}
 }
 
@@ -406,9 +413,9 @@ func sendSentenceGuessedMessage(game *structures.Game) {
 
 func initializeNextRound(game *structures.Game) {
 	for _, player := range game.Players {
-		game.GameData.PlayersPlayed[player] = false
+		game.GameData.PlayersPlayed[player.Nickname] = false
 	}
-	game.GameData.PlayerLetters = make(map[structures.Player]string)
+	game.GameData.PlayerLetters = make(map[string]string)
 }
 
 func completeSentenceWithLetters(game *structures.Game) {
@@ -418,9 +425,9 @@ func completeSentenceWithLetters(game *structures.Game) {
 }
 
 func calculatePoints(player *structures.Player, game *structures.Game) {
-	letter := game.GameData.PlayerLetters[*player]
+	letter := game.GameData.PlayerLetters[player.Nickname]
 	result := calculatePointPerLetter(letter, game.GameData.SentenceToGuess)
-	game.GameData.PlayerPoints[*player] += result
+	game.GameData.PlayerPoints[player.Nickname] += result
 
 	if contains(game.GameData.CharactersSelected, letter) {
 		fmt.Println("Uz obsahuje, nic nepridavam, je to prvek: ", letter)
@@ -440,9 +447,6 @@ func calculatePointPerLetter(character, sentence string) int {
 			count++
 		}
 	}
-
-	letterPointsMutex.Lock()
-	defer letterPointsMutex.Unlock()
 
 	return letterPoints[characterLower] * count
 
@@ -497,14 +501,10 @@ func startTheGame(client net.Conn, message string) {
 }
 
 func canLobbyBeStarted(lobby structures.Game) bool {
-	gamingLobbiesMapMutex.Lock()
-	defer gamingLobbiesMapMutex.Unlock()
 	return len(lobby.Players) > 1 && lobby.GameData.IsLobby
 }
 
 func findLobbyWithPlayer(player structures.Player) *structures.Game {
-	gamingLobbiesMapMutex.Lock()
-	defer gamingLobbiesMapMutex.Unlock()
 	for _, game := range gamingLobbiesMap {
 		for _, p := range game.Players {
 			if p == player {
@@ -516,29 +516,26 @@ func findLobbyWithPlayer(player structures.Player) *structures.Game {
 }
 func initializePlayerPoints(gameData *structures.GameState, players map[int]structures.Player) {
 	for _, player := range players {
-		gameData.PlayerPoints[player] = 0
+		gameData.PlayerPoints[player.Nickname] = 0
 	}
 }
 
-func printPlayerPoints(playerPoints map[structures.Player]int) {
+func printPlayerPoints(playerPoints map[string]int) {
 	for player, points := range playerPoints {
 		fmt.Printf("Player %v has %d points\n", player, points)
 	}
 }
 
 func switchLobbyToGame(lobbyID string) {
-	gamingLobbiesMapMutex.Lock()
-	defer gamingLobbiesMapMutex.Unlock()
-
 	if selectedGame, ok := gamingLobbiesMap[lobbyID]; ok {
 		selectedGame.GameData.IsLobby = false
 		dictionaryItem := selectRandomSentence()
 		selectedGame.GameData.SentenceToGuess = dictionaryItem.Sentence
 		selectedGame.GameData.Hint = dictionaryItem.Hint
 		selectedGame.GameData.CharactersSelected = []string{}
-		selectedGame.GameData.PlayerPoints = make(map[structures.Player]int)
-		selectedGame.GameData.PlayersPlayed = make(map[structures.Player]bool)
-		selectedGame.GameData.PlayerLetters = make(map[structures.Player]string)
+		selectedGame.GameData.PlayerPoints = make(map[string]int)
+		selectedGame.GameData.PlayersPlayed = make(map[string]bool)
+		selectedGame.GameData.PlayerLetters = make(map[string]string)
 		initializePlayerPoints(&selectedGame.GameData, selectedGame.Players)
 		printPlayerPoints(selectedGame.GameData.PlayerPoints)
 
@@ -546,7 +543,7 @@ func switchLobbyToGame(lobbyID string) {
 		messageToClients := utils.GameStartedWithInitInfo(selectedGame)
 		for _, player := range gamingLobbiesMap[lobbyID].Players {
 			player.Socket.Write([]byte(messageToClients))
-			selectedGame.GameData.PlayersPlayed[player] = false
+			selectedGame.GameData.PlayersPlayed[player.Nickname] = false
 		}
 
 		return
@@ -565,7 +562,6 @@ func isLobbyEmpty(game structures.Game) bool {
 func joinPlayerIntoGame(client net.Conn, message string) {
 
 	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
-	gamingLobbiesMapMutex.Lock()
 	if game, ok := gamingLobbiesMap[lobbyName]; ok {
 		if isLobbyEmpty(game) {
 			if _, exists := mainLobbyMap[client]; exists {
@@ -585,14 +581,11 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 	} else {
 		fmt.Printf("Lobby %s not found in gamingLobbiesMap.\n", lobbyName)
 	}
-	gamingLobbiesMapMutex.Unlock()
 }
 
 func updateLobbyInfoInOtherClients() {
 	for _, player := range mainLobbyMap {
-		gamingLobbiesMapMutex.Unlock()
 		sendLobbyInfo(player.Socket)
-		gamingLobbiesMapMutex.Lock()
 	}
 }
 
@@ -603,9 +596,7 @@ func playerMovedToGameLobby(player structures.Player) {
 
 func sendInfoAboutStart(game structures.Game) {
 	for _, player := range game.Players {
-		gamingLobbiesMapMutex.Unlock()
 		player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game), len(game.Players), constants.MaxPlayers)))
-		gamingLobbiesMapMutex.Lock()
 	}
 }
 

@@ -13,9 +13,9 @@ type GameState struct {
 	SentenceToGuess    string
 	Hint               string
 	CharactersSelected []string
-	PlayerPoints       map[Player]int
-	PlayersPlayed      map[Player]bool
-	PlayerLetters      map[Player]string
+	PlayerPoints       map[string]int
+	PlayersPlayed      map[string]bool
+	PlayerLetters      map[string]string
 }
 
 type Player struct {

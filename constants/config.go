@@ -1,7 +1,7 @@
 package constants
 
 const (
-	ConnHost          = "0.0.0.0"
+	ConnHost          = "192.168.168.5"
 	ConnPort          = "10000"
 	ConnType          = "tcp"
 	RoomsCount        = 4
