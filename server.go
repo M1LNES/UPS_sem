@@ -322,7 +322,7 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	lobbyID := findLobbyWithPlayer(*player).ID
 
 	lobby, ok := gamingLobbiesMap[lobbyID]
-	if ok {
+	if ok && !contains(gamingLobbiesMap[lobbyID].GameData.CharactersSelected, message) {
 		player.Socket.Write([]byte(wholeMessage + "\n"))
 		playerMadeMove(&lobby, *player, message)
 		gamingLobbiesMap[lobbyID] = lobby
@@ -330,6 +330,8 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 			print("Hra asi skoncila, posilam nove informace typkum")
 			updateLobbyInfoInOtherClients()
 		}
+	} else {
+		fmt.Println("Zkusil poslat dvakrat stejny pismeno, proto nic nevracim.")
 	}
 }
 
