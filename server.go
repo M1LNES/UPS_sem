@@ -91,7 +91,7 @@ func pingAllClients() {
 		}
 	}
 
-	for gameID, game := range gamingLobbiesMap {
+	for _, game := range gamingLobbiesMap {
 		for playerID, player := range game.Players {
 			if player.PingCounter > 0 && player.PingCounter < 10 {
 				utils.SendInfoAboutPendingUser(game, player)
@@ -102,16 +102,16 @@ func pingAllClients() {
 			player.PingCounter++
 
 			if player.PingCounter <= 10 {
-				gamingLobbiesMap[gameID].Players[playerID] = player
+				gamingLobbiesMap[game.ID].Players[playerID] = player
 			} else {
 				fmt.Println("Disconnecting player: ", player.Nickname)
-				gamingLobbiesMap[gameID].Players[playerID].Socket.Close()
-				delete(gamingLobbiesMap[gameID].Players, playerID)
+				gamingLobbiesMap[game.ID].Players[playerID].Socket.Close()
+				delete(gamingLobbiesMap[game.ID].Players, playerID)
 				sendMessageToCancelGame(game)
 				movePlayersBackToMainLobby(&game)
 
 				game.GameData.IsLobby = true
-				gamingLobbiesMap[gameID] = game
+				gamingLobbiesMap[game.ID] = game
 				updateLobbyInfoInOtherClients()
 			}
 		}
@@ -225,6 +225,7 @@ func handleMessage(message string, client net.Conn) {
 		if createNickForConnection(client, message) {
 			fmt.Println("Client successfully added, his name: ", mainLobbyMap[client].Nickname)
 			sendLobbyInfo(client)
+			printGamingLobbiesMap()
 		} else {
 			fmt.Println("Firstly you must identify yourself, aborting!")
 			client.Close()
@@ -379,6 +380,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 			gameEndedMessage(game)
 			movePlayersBackToMainLobby(game)
 			game.GameData.IsLobby = true
+			gamingLobbiesMap[game.ID] = *game
 		} else {
 			if isSentenceGuessed(game) {
 				sendSentenceGuessedMessage(game)
@@ -464,9 +466,10 @@ func contains(slice []string, element string) bool {
 func movePlayersBackToMainLobby(game *structures.Game) {
 	for _, player := range game.Players {
 		mainLobbyMap[player.Socket] = player
+		delete(game.Players, player.Nickname)
 	}
 
-	game.Players = make(map[string]structures.Player)
+	//game.Players = make(map[string]structures.Player)
 }
 
 func isSentenceGuessed(lobby *structures.Game) bool {

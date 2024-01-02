@@ -1,91 +1,36 @@
-Czech Republic; Country in Central Europe.
-BMW; German luxury automobile manufacturer known for its sleek designs.
-Mona Lisa; Famous portrait painting by Leonardo da Vinci.
-Pyramids; Ancient structures in Egypt, including the Great Pyramid of Giza.
-Smartphone; Portable electronic device for communication and various applications.
-Shakespeare; Renowned English playwright and poet from the Renaissance.
-Everest; Earth's highest mountain, part of the Himalayas.
-Mozart; Influential Austrian composer from the Classical era.
-Espresso; Strong, concentrated coffee brewed by forcing hot water through finely-ground coffee beans.
-Sushi; Japanese dish consisting of vinegared rice accompanied by various ingredients like seafood and vegetables.
-Renaissance; Historical period known for a revival of art, literature, and learning.
-DNA; Molecule carrying genetic instructions for the development, functioning, and reproduction of living organisms.
-Van Gogh; Dutch post-impressionist painter known for works like "Starry Night."
-Niagara Falls; Famous waterfall located on the border between the United States and Canada.
-Chocolate Chip Cookie; Delicious baked treat with chocolate chips as a key ingredient.
-Artificial Intelligence; The development of computer systems that can perform tasks requiring human intelligence.
-Eiffel Tower; Iconic iron structure located in Paris, France.
-World War II; Global conflict from 1939 to 1945 involving major world powers.
-Solar System; System of celestial bodies, including the sun, planets, and moons, that orbit around the sun.
-Leonardo da Vinci; Italian polymath known for his contributions to art, science, and engineering.
-Mount Rushmore; Sculpture in the Black Hills of South Dakota featuring the faces of four U.S. presidents.
-Sherlock Holmes; Fictional detective created by Sir Arthur Conan Doyle.
-Great Wall of China; Ancient fortification, often considered one of the wonders of the world.
-Penguin; Flightless bird found in the Southern Hemisphere, known for its distinctive black and white coloring.
-Taj Mahal; Magnificent marble mausoleum in Agra, India.
-Jazz; Genre of music characterized by improvisation, syncopation, and a unique rhythm.
-Platypus; Unique mammal native to Australia, known for its duckbill and webbed feet.
-Redwood Forest; Forest in California featuring tall, majestic redwood trees.
-Hubble Space Telescope; Space telescope known for its contributions to astronomy.
-Renaissance Art; Artistic movement characterized by a renewed interest in classical styles and subjects.
-Mona Lisa; Famous portrait painting by Leonardo da Vinci.
-Volkswagen Beetle; Iconic compact car known for its distinctive rounded shape.
-Sherlock Holmes; Fictional detective created by Sir Arthur Conan Doyle.
-Acropolis; Ancient citadel on a rocky outcrop in Athens, Greece.
-Fossil; Preserved remains or traces of ancient organisms.
-Taj Mahal; Magnificent marble mausoleum in Agra, India.
-Fibonacci Sequence; Mathematical sequence where each number is the sum of the two preceding ones.
-Great Barrier Reef; Largest coral reef system located off the coast of Australia.
-Humpback Whale; Majestic marine mammal known for its distinctive hump and songs.
-Grand Canyon; Immense canyon carved by the Colorado River in Arizona, USA.
-Sahara Desert; Vast arid region in North Africa.
-Apple Inc.; American technology company known for iPhones and Mac computers.
-The Starry Night; Famous painting by Vincent van Gogh.
-Kremlin; Historic fortified complex in Moscow, Russia.
-Charles Darwin; English naturalist known for the theory of evolution.
-Great Sphinx; Monumental statue with a lion's body and a human head in Egypt.
-Machu Picchu; Incan citadel located in the Andes Mountains of Peru.
-The Beatles; Legendary British rock band from the 1960s.
-Manga; Japanese comic or graphic novel.
-Mount Kilimanjaro; Tallest mountain in Africa, located in Tanzania.
-Mayan Civilization; Ancient Mesoamerican civilization known for pyramids and hieroglyphics.
-Kremlin; Historic fortified complex in Moscow, Russia.
-Tokyo; Capital city of Japan.
-Salvador Dalí; Surrealist artist known for melting clocks in paintings.
-Ayers Rock; Iconic sandstone formation in the Northern Territory, Australia.
-The Odyssey; Ancient Greek epic poem attributed to Homer.
-Colosseum; Amphitheater in Rome, Italy, known for gladiator contests.
-Vincent van Gogh; Dutch post-impressionist painter known for works like "Starry Night."
-Archimedes; Ancient Greek mathematician and inventor.
-Kremlin; Historic fortified complex in Moscow, Russia.
-Claude Monet; French impressionist painter known for water lily paintings.
-Parthenon; Ancient Greek temple dedicated to Athena in Athens.
-The Odyssey; Ancient Greek epic poem attributed to Homer.
-Stonehenge; Prehistoric monument in Wiltshire, England.
-Frida Kahlo; Mexican painter known for self-portraits and surrealist art.
-Mount Kilimanjaro; Tallest mountain in Africa, located in Tanzania.
-Ancient Rome; Civilization that flourished on the Italian Peninsula.
-The Great Gatsby; Classic American novel by F. Scott Fitzgerald.
-Michelangelo; Italian Renaissance artist known for the Sistine Chapel ceiling.
-Sahara Desert; Vast arid region in North Africa.
-Haruki Murakami; Japanese author known for surreal and imaginative novels.
-Angkor Wat; Ancient temple complex in Cambodia.
-Marie Curie; Nobel Prize-winning physicist and chemist.
-The Odyssey; Ancient Greek epic poem attributed to Homer.
-Angkor Wat; Ancient temple complex in Cambodia.
-Sydney Opera House; Iconic architectural structure in Australia.
-Isaac Newton; English mathematician and physicist.
-Ancient Egypt; Civilization along the Nile River known for pyramids and pharaohs.
-The Great Gatsby; Classic American novel by F. Scott Fitzgerald.
-Istanbul; City straddling Europe and Asia in Turkey.
-Marie Curie; Nobel Prize-winning physicist and chemist.
-Stonehenge; Prehistoric monument in Wiltshire, England.
-The Scream; Famous painting by Edvard Munch.
-Ancient Rome; Civilization that flourished on the Italian Peninsula.
-Salvador Dalí; Surrealist artist known for melting clocks in paintings.
-Isaac Newton; English mathematician and physicist.
-The Sistine Chapel; Famous chapel in Vatican City painted by Michelangelo.
-Machu Picchu; Incan citadel located in the Andes Mountains of Peru.
-Marie Curie; Nobel Prize-winning physicist and chemist.
-Claude Monet; French impressionist painter known for water lily paintings.
-Ancient Greece; Civilization known for democracy, philosophy, and the Olympic Games
+Slon; savci
+Kyjev; hlavni mesto
+Rytir; stredoveky valecni
+Skala; utes na morskem pobrezi
+Amazonka; reka v Jizni Americe
+Orchidej; kvetina
+Sparta; staroveke mesto
+Kaktus; druh rostliny
+Viking; severan
+Trubka; hudebni nastroj
+Faraon; egyptsky vladce
+Ctverec; geometricke tvar
+Antilopa; africky savec
+Kytara; strunny nastroj
+Krizovka; hadankova hra
+Desetinne; cislo s desetinnou carkou
+Krasobrusleni; sport na lede
+Vesmir; nekonecny prostor
+Karibik; morsky region
+Barbar; divoky bojovnik
+Atlas; kniha map
+Klavesnice; soucast pocitace
+Kontinent; rozsahla pevninska cast
+Pagoda; tradicni asijska stavba
+Akrobacie; kruhy a kouzla
+Monarchie; vlada krale
+Kabelka; zensky prislusenstvi
+Paprika; koreni
+Hercule; anticky hrdina
+Zahadny; tajemny
+Plaz; studenokrevne zvire
+Akce; udalost nebo cin
+Koraly; utes v mori
+Opera; hudebni divadelni zanr
+Myslivec; lovec v prirode
+Karamel; sladkost
