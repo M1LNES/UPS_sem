@@ -563,8 +563,9 @@ func isLobbyEmpty(game structures.Game) bool {
 
 func joinPlayerIntoGame(client net.Conn, message string) {
 	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+	printGamingLobbiesMap()
 	if game, ok := gamingLobbiesMap[lobbyName]; ok {
-		if isLobbyEmpty(game) {
+		if isLobbyEmpty(game) && game.GameData.IsLobby {
 			if _, exists := mainLobbyMap[client]; exists {
 				nick := mainLobbyMap[client].Nickname
 				game.Players[mainLobbyMap[client].Nickname] = mainLobbyMap[client]
@@ -577,11 +578,13 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 				fmt.Println("User not found in mainLobbyMap.")
 			}
 		} else {
-			fmt.Println("Lobby is not empty.")
+			fmt.Println("Lobby is not empty or in game.")
 		}
 	} else {
 		fmt.Printf("Lobby %s not found in gamingLobbiesMap.\n", lobbyName)
 	}
+	printGamingLobbiesMap()
+
 }
 
 func updateLobbyInfoInOtherClients() {
@@ -612,5 +615,27 @@ func createNickForConnection(client net.Conn, message string) bool {
 		return true
 	} else {
 		return false
+	}
+}
+
+func printGamingLobbiesMap() {
+	fmt.Println("Printing gamingLobbiesMap:")
+	for lobbyID, game := range gamingLobbiesMap {
+		fmt.Printf("Lobby ID: %s\n", lobbyID)
+		PrintPlayersInLobby(&game) // Assuming PrintPlayersInLobby method exists in the Game struct
+		fmt.Println("--------------------")
+	}
+}
+
+func PrintPlayersInLobby(g *structures.Game) {
+	fmt.Printf("Players in Lobby (Game ID: %s):\n", g.ID)
+
+	if len(g.Players) == 0 {
+		fmt.Println("No players in the lobby.")
+		return
+	}
+
+	for _, player := range g.Players {
+		fmt.Printf("Player ID: %s\n", player.Nickname)
 	}
 }
