@@ -1,36 +1,42 @@
-Slon; savci
-Kyjev; hlavni mesto
-Rytir; stredoveky valecni
-Skala; utes na morskem pobrezi
-Amazonka; reka v Jizni Americe
-Orchidej; kvetina
-Sparta; staroveke mesto
-Kaktus; druh rostliny
-Viking; severan
-Trubka; hudebni nastroj
-Faraon; egyptsky vladce
-Ctverec; geometricke tvar
-Antilopa; africky savec
-Kytara; strunny nastroj
-Krizovka; hadankova hra
-Desetinne; cislo s desetinnou carkou
-Krasobrusleni; sport na lede
-Vesmir; nekonecny prostor
-Karibik; morsky region
-Barbar; divoky bojovnik
-Atlas; kniha map
-Klavesnice; soucast pocitace
-Kontinent; rozsahla pevninska cast
-Pagoda; tradicni asijska stavba
-Akrobacie; kruhy a kouzla
-Monarchie; vlada krale
-Kabelka; zensky prislusenstvi
-Paprika; koreni
-Hercule; anticky hrdina
-Zahadny; tajemny
-Plaz; studenokrevne zvire
-Akce; udalost nebo cin
-Koraly; utes v mori
-Opera; hudebni divadelni zanr
-Myslivec; lovec v prirode
-Karamel; sladkost
+Slon;savci
+Kyjev;hlavni mesto
+Rytir;stredoveky valecni
+Skala;utes na morskem pobrezi
+Amazonka;reka v Jizni Americe
+Orchidej;kvetina
+Sparta;staroveke mesto
+Kaktus;druh rostliny
+Viking;severan
+Trubka;hudebni nastroj
+Faraon;egyptsky vladce
+Ctverec;geometricke tvar
+Antilopa;africky savec
+Kytara;strunny nastroj
+Krizovka;hadankova hra
+Desetinne;cislo s desetinnou carkou
+Krasobrusleni;sport na lede
+Vesmir;nekonecny prostor
+Karibik;morsky region
+Barbar;divoky bojovnik
+Atlas;kniha map
+Klavesnice;soucast pocitace
+Kontinent;rozsahla pevninska cast
+Pagoda;tradicni asijska stavba
+Akrobacie;kruhy a kouzla
+Monarchie;vlada krale
+Kabelka;zensky prislusenstvi
+Paprika;koreni
+Hercules;anticky hrdina
+Zahadny;tajemny
+Plaz;studenokrevne zvire
+Akce;udalost nebo cin
+Koraly;utes v mori
+Opera;hudebni divadelni zanr
+Myslivec;lovec v prirode
+Karamel;sladkost
+Antonin;muzske jmeno
+Lidl;supemarket
+Ostrava;ceske mesto
+Petr Pavel;prezident
+Parni lokomotiva;vozidlo
+Adrenalin;latka v tele

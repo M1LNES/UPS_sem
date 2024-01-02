@@ -92,21 +92,25 @@ func pingAllClients() {
 	}
 
 	for _, game := range gamingLobbiesMap {
-		for playerID, player := range game.Players {
+		for _, player := range game.Players {
 			if player.PingCounter > 0 && player.PingCounter < 10 {
 				utils.SendInfoAboutPendingUser(game, player)
-			} else {
+				fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
+			} else if player.PingCounter == 0 {
 				utils.SendInfoAboutConnectedUser(game, player)
+				fmt.Printf("Hrac %s je v cajku.", player.Nickname)
+			} else {
+				fmt.Printf("Hrac %s bude odpojen", player.Nickname)
+
 			}
 			player.Socket.Write([]byte(message))
-			player.PingCounter++
 
 			if player.PingCounter <= 10 {
-				gamingLobbiesMap[game.ID].Players[playerID] = player
+				gamingLobbiesMap[game.ID].Players[player.Nickname] = player
 			} else {
 				fmt.Println("Disconnecting player: ", player.Nickname)
-				gamingLobbiesMap[game.ID].Players[playerID].Socket.Close()
-				delete(gamingLobbiesMap[game.ID].Players, playerID)
+				gamingLobbiesMap[game.ID].Players[player.Nickname].Socket.Close()
+				delete(gamingLobbiesMap[game.ID].Players, player.Nickname)
 				sendMessageToCancelGame(game)
 				movePlayersBackToMainLobby(&game)
 
@@ -169,7 +173,6 @@ func initializegamingLobbiesMap() {
 
 func handleConnection(client net.Conn) {
 	defer client.Close()
-
 	reader := bufio.NewReader(client)
 
 	for {
