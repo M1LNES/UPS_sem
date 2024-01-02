@@ -4,6 +4,7 @@ import (
 	"UPS_sem/constants"
 	"UPS_sem/structures"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -54,16 +55,22 @@ func selectedCharactersFromGame(game structures.Game) string {
 }
 
 func getPlayerNicknamesWithPoints(game structures.Game) string {
-	var nicknames string
-
-	for _, player := range game.Players {
-		if nicknames != "" {
-			nicknames += ";"
-		}
-		nicknames += fmt.Sprintf("%s:%d", player.Nickname, game.GameData.PlayerPoints[player.Nickname])
+	var nicknames []string
+	for nickname := range game.GameData.PlayerPoints {
+		nicknames = append(nicknames, nickname)
 	}
 
-	return nicknames
+	sort.Strings(nicknames)
+
+	var result string
+	for i, nickname := range nicknames {
+		if i > 0 {
+			result += ";"
+		}
+		result += fmt.Sprintf("%s:%d", nickname, game.GameData.PlayerPoints[nickname])
+	}
+
+	return result
 }
 
 func maskSentence(charactersSelected []string, sentenceToGuess string) string {
