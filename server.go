@@ -158,7 +158,7 @@ func initializegamingLobbiesMap() {
 		lobbyID := fmt.Sprintf("lobby%d", i)
 		gamingLobbiesMap[lobbyID] = structures.Game{
 			ID:      lobbyID,
-			Players: make(map[int]structures.Player),
+			Players: make(map[string]structures.Player),
 			GameData: structures.GameState{
 				IsLobby: true,
 			},
@@ -242,8 +242,8 @@ func handleMessage(message string, client net.Conn) {
 			receiveLetter(client, extractedMessage, message)
 		case "pong":
 			//handlePongMessage(client)
-		//case "retr":
-		//	resendClientInfo(client, message)
+		case "retr":
+			resendClientInfo(client, message)
 		default:
 			fmt.Println("Unknown command ", messageType)
 		}
@@ -256,7 +256,6 @@ func handleMessage(message string, client net.Conn) {
 func resendClientInfo(client net.Conn, message string) {
 	player := findPlayerBySocketReturn(client)
 	lobbyID := findLobbyWithPlayer(*player).ID
-
 	lobby, _ := gamingLobbiesMap[lobbyID]
 
 	messageFinal := utils.CreateResendStateMessage(&lobby, *player)
@@ -324,7 +323,6 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 
 	lobby, ok := gamingLobbiesMap[lobbyID]
 	if ok {
-		//lobby.GameData.PlayersPlayed[*player] = true
 		player.Socket.Write([]byte(wholeMessage + "\n"))
 		playerMadeMove(&lobby, *player, message)
 		gamingLobbiesMap[lobbyID] = lobby
@@ -466,7 +464,7 @@ func movePlayersBackToMainLobby(game *structures.Game) {
 		mainLobbyMap[player.Socket] = player
 	}
 
-	game.Players = make(map[int]structures.Player)
+	game.Players = make(map[string]structures.Player)
 }
 
 func isSentenceGuessed(lobby *structures.Game) bool {
@@ -495,6 +493,7 @@ func startTheGame(client net.Conn, message string) {
 	lobby := findLobbyWithPlayer(*player)
 	if canLobbyBeStarted(*lobby) {
 		switchLobbyToGame(lobby.ID)
+		updateLobbyInfoInOtherClients()
 	} else {
 		fmt.Println("Could not switch to game - not enough players yet.")
 	}
@@ -514,7 +513,7 @@ func findLobbyWithPlayer(player structures.Player) *structures.Game {
 	}
 	return nil
 }
-func initializePlayerPoints(gameData *structures.GameState, players map[int]structures.Player) {
+func initializePlayerPoints(gameData *structures.GameState, players map[string]structures.Player) {
 	for _, player := range players {
 		gameData.PlayerPoints[player.Nickname] = 0
 	}
@@ -552,24 +551,26 @@ func switchLobbyToGame(lobbyID string) {
 
 func selectRandomSentence() structures.DictionaryItem {
 	rand.Seed(time.Now().UnixNano())
+	dictionaryMutex.Lock()
 	index := rand.Intn(len(dictionary))
+	dictionaryMutex.Unlock()
 	return dictionary[index]
 }
 
 func isLobbyEmpty(game structures.Game) bool {
 	return len(game.Players) < constants.MaxPlayers
 }
-func joinPlayerIntoGame(client net.Conn, message string) {
 
+func joinPlayerIntoGame(client net.Conn, message string) {
 	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 	if game, ok := gamingLobbiesMap[lobbyName]; ok {
 		if isLobbyEmpty(game) {
 			if _, exists := mainLobbyMap[client]; exists {
-				playerID := len(game.Players) + 1
-				game.Players[playerID] = mainLobbyMap[client]
+				nick := mainLobbyMap[client].Nickname
+				game.Players[mainLobbyMap[client].Nickname] = mainLobbyMap[client]
 				fmt.Printf("User %s joined lobby %s\n", mainLobbyMap[client].Nickname, lobbyName)
 				delete(mainLobbyMap, client)
-				playerMovedToGameLobby(game.Players[playerID])
+				playerMovedToGameLobby(game.Players[nick])
 				updateLobbyInfoInOtherClients()
 				sendInfoAboutStart(game)
 			} else {

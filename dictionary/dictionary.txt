@@ -38,3 +38,54 @@ Fibonacci Sequence; Mathematical sequence where each number is the sum of the tw
 Great Barrier Reef; Largest coral reef system located off the coast of Australia.
 Humpback Whale; Majestic marine mammal known for its distinctive hump and songs.
 Grand Canyon; Immense canyon carved by the Colorado River in Arizona, USA.
+Sahara Desert; Vast arid region in North Africa.
+Apple Inc.; American technology company known for iPhones and Mac computers.
+The Starry Night; Famous painting by Vincent van Gogh.
+Kremlin; Historic fortified complex in Moscow, Russia.
+Charles Darwin; English naturalist known for the theory of evolution.
+Great Sphinx; Monumental statue with a lion's body and a human head in Egypt.
+Machu Picchu; Incan citadel located in the Andes Mountains of Peru.
+The Beatles; Legendary British rock band from the 1960s.
+Manga; Japanese comic or graphic novel.
+Mount Kilimanjaro; Tallest mountain in Africa, located in Tanzania.
+Mayan Civilization; Ancient Mesoamerican civilization known for pyramids and hieroglyphics.
+Kremlin; Historic fortified complex in Moscow, Russia.
+Tokyo; Capital city of Japan.
+Salvador Dalí; Surrealist artist known for melting clocks in paintings.
+Ayers Rock; Iconic sandstone formation in the Northern Territory, Australia.
+The Odyssey; Ancient Greek epic poem attributed to Homer.
+Colosseum; Amphitheater in Rome, Italy, known for gladiator contests.
+Vincent van Gogh; Dutch post-impressionist painter known for works like "Starry Night."
+Archimedes; Ancient Greek mathematician and inventor.
+Kremlin; Historic fortified complex in Moscow, Russia.
+Claude Monet; French impressionist painter known for water lily paintings.
+Parthenon; Ancient Greek temple dedicated to Athena in Athens.
+The Odyssey; Ancient Greek epic poem attributed to Homer.
+Stonehenge; Prehistoric monument in Wiltshire, England.
+Frida Kahlo; Mexican painter known for self-portraits and surrealist art.
+Mount Kilimanjaro; Tallest mountain in Africa, located in Tanzania.
+Ancient Rome; Civilization that flourished on the Italian Peninsula.
+The Great Gatsby; Classic American novel by F. Scott Fitzgerald.
+Michelangelo; Italian Renaissance artist known for the Sistine Chapel ceiling.
+Sahara Desert; Vast arid region in North Africa.
+Haruki Murakami; Japanese author known for surreal and imaginative novels.
+Angkor Wat; Ancient temple complex in Cambodia.
+Marie Curie; Nobel Prize-winning physicist and chemist.
+The Odyssey; Ancient Greek epic poem attributed to Homer.
+Angkor Wat; Ancient temple complex in Cambodia.
+Sydney Opera House; Iconic architectural structure in Australia.
+Isaac Newton; English mathematician and physicist.
+Ancient Egypt; Civilization along the Nile River known for pyramids and pharaohs.
+The Great Gatsby; Classic American novel by F. Scott Fitzgerald.
+Istanbul; City straddling Europe and Asia in Turkey.
+Marie Curie; Nobel Prize-winning physicist and chemist.
+Stonehenge; Prehistoric monument in Wiltshire, England.
+The Scream; Famous painting by Edvard Munch.
+Ancient Rome; Civilization that flourished on the Italian Peninsula.
+Salvador Dalí; Surrealist artist known for melting clocks in paintings.
+Isaac Newton; English mathematician and physicist.
+The Sistine Chapel; Famous chapel in Vatican City painted by Michelangelo.
+Machu Picchu; Incan citadel located in the Andes Mountains of Peru.
+Marie Curie; Nobel Prize-winning physicist and chemist.
+Claude Monet; French impressionist painter known for water lily paintings.
+Ancient Greece; Civilization known for democracy, philosophy, and the Olympic Games

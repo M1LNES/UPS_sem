@@ -4,7 +4,7 @@ import "net"
 
 type Game struct {
 	ID       string
-	Players  map[int]Player
+	Players  map[string]Player
 	GameData GameState
 }
 
