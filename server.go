@@ -104,7 +104,7 @@ func pingAllClients() {
 
 			}
 			player.Socket.Write([]byte(message))
-
+			player.PingCounter++
 			if player.PingCounter <= 10 {
 				gamingLobbiesMap[game.ID].Players[player.Nickname] = player
 			} else {
