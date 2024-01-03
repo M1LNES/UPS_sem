@@ -271,7 +271,12 @@ func renewStateToPlayer(message string, client net.Conn) {
 	game.Players[player.Nickname] = *player
 	gamingLobbiesMap[game.ID] = *game
 	player.Socket.Write([]byte(utils.LobbyJoined(true)))
+	sendInfoAboutStartToClient(*player, *game)
 	resendClientInfo(client)
+}
+
+func sendInfoAboutStartToClient(player structures.Player, game structures.Game) {
+	player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game), len(game.Players), constants.MaxPlayers)))
 }
 
 func playerNickInGameWithDifferentSocketReturn(nick string, socket net.Conn) (*structures.Game, *structures.Player) {
