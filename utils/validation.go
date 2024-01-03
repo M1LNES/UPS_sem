@@ -2,6 +2,11 @@ package utils
 
 import (
 	"UPS_sem/constants"
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+	"regexp"
 	"strconv"
 )
 
@@ -48,3 +53,78 @@ func hasValidMessageLength(message string) bool {
 
 	return true
 }
+
+func ValidateConfig() bool {
+	if constants.MaxPlayers <= 2 {
+		fmt.Println("MaxPlayers should be greater than 2")
+		return false
+	}
+
+	// Validate RoomsCount
+	if constants.RoomsCount <= 1 {
+		fmt.Println("RoomsCount should be greater than 1")
+		return false
+	}
+
+	// Validate ConnType
+	if constants.ConnType != "tcp" {
+		fmt.Println("ConnType should be 'tcp'")
+		return false
+	}
+
+	// Validate ConnHost
+	if constants.ConnHost != "localhost" {
+		if net.ParseIP(constants.ConnHost) == nil {
+			fmt.Println("ConnHost should be an IP address or 'localhost'")
+			return false
+		}
+	}
+
+	_, err := strconv.Atoi(constants.ConnPort)
+	if err != nil {
+		fmt.Println("ConnPort should be a valid port number")
+		return false
+	}
+
+	dictionaryFilePath := "./dictionary/" + constants.DictionaryFile
+	_, err = os.Stat(dictionaryFilePath)
+	if err != nil {
+		fmt.Printf("Dictionary file '%s' does not exist\n", constants.DictionaryFile)
+		return false
+	}
+
+	if !validateDictionaryFormat(dictionaryFilePath) {
+		return false
+	}
+
+	return true
+}
+
+func validateDictionaryFormat(filePath string) bool {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("Error opening dictionary file: %v\n", err)
+		return false
+
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !validDictionaryEntry.MatchString(line) {
+			fmt.Printf("Invalid dictionary entry format: %s\n", line)
+			return false
+
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Error reading dictionary file: %v\n", err)
+		return false
+	}
+
+	return true
+}
+
+var validDictionaryEntry = regexp.MustCompile(`^[\p{L}0-9\s.,!?':"-]+;[\p{L}0-9\s.,!?':"-]+$`)

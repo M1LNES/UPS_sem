@@ -35,6 +35,12 @@ var (
 )
 
 func main() {
+
+	if !utils.ValidateConfig() {
+		fmt.Println("Config File is not valid. Closing server!")
+		return
+	}
+
 	initializegamingLobbiesMap()
 	createDictionary()
 
@@ -506,7 +512,8 @@ func calculatePointPerLetter(character, sentence string) int {
 			count++
 		}
 	}
-
+	letterPointsMutex.Lock()
+	defer letterPointsMutex.Unlock()
 	return letterPoints[characterLower] * count
 
 }

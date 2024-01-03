@@ -4,6 +4,7 @@ const (
 	MessageHeader       = "vrata123"
 	MessageTypeLength   = 4
 	MessageLengthFormat = 3
+	PointsNeededToWin   = 50
 
 	LobbiesInfo     = "lbin"
 	LobbyJoining    = "lbjn"
