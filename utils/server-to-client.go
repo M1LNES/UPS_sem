@@ -212,3 +212,10 @@ func CreateResendStateMessage(game *structures.Game, player structures.Player) s
 	finalMessage := fmt.Sprintf("%s%03d%s%s\n", magic, len(messageBody), messageType, messageBody)
 	return finalMessage
 }
+
+func LobbyCannotBeStarted() string {
+	magic := constants.MessageHeader
+	messageType := constants.AlreadyInGame
+	message := fmt.Sprintf("%s%03d%s\n", magic, 0, messageType)
+	return message
+}

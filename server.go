@@ -229,7 +229,6 @@ func handleMessage(message string, client net.Conn) {
 	extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 
 	if messageType == "nick" && playerNickInGameWithDifferentSocket(extractedMessage, client) {
-		fmt.Println("musim mu zmenit socket, kokotovi")
 		renewStateToPlayer(extractedMessage, client)
 	} else if _, exists := mainLobbyMap[client]; !exists && findPlayerBySocket(client) == false {
 		if createNickForConnection(client, message) {
@@ -272,8 +271,14 @@ func renewStateToPlayer(message string, client net.Conn) {
 	game.Players[player.Nickname] = *player
 	gamingLobbiesMap[game.ID] = *game
 	player.Socket.Write([]byte(utils.LobbyJoined(true)))
+
 	sendInfoAboutStartToClient(*player, *game)
-	resendClientInfo(client)
+	if !gamingLobbiesMap[game.ID].GameData.IsLobby {
+		fmt.Println("Pry to neni lobby")
+		resendClientInfo(client)
+	} else {
+		fmt.Println("je to lobby")
+	}
 }
 
 func sendInfoAboutStartToClient(player structures.Player, game structures.Game) {
@@ -635,7 +640,9 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 				fmt.Println("User not found in mainLobbyMap.")
 			}
 		} else {
-			fmt.Println("Lobby is not empty or in game.")
+			messageToClient := utils.LobbyCannotBeStarted()
+			client.Write([]byte(messageToClient))
+			//fmt.Println("Lobby is not empty or in game.")
 		}
 	} else {
 		fmt.Printf("Lobby %s not found in gamingLobbiesMap.\n", lobbyName)

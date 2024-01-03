@@ -1,8 +1,7 @@
 package constants
 
 const (
-	MessageHeader = "vrata123"
-
+	MessageHeader       = "vrata123"
 	MessageTypeLength   = 4
 	MessageLengthFormat = 3
 
@@ -17,4 +16,5 @@ const (
 	PendingUser     = "pndu"
 	ConnectedUser   = "uscn"
 	RetriveState    = "retr"
+	AlreadyInGame   = "alig"
 )
