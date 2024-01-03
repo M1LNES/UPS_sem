@@ -74,14 +74,14 @@ func pingAllClients() {
 
 	message := utils.CreatePingMessage()
 	for i, player := range mainLobbyMap {
-		if player.PingCounter > 0 && player.PingCounter < 10 {
+		if player.PingCounter > 0 && player.PingCounter < 12 {
 			fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
 		} else {
 			fmt.Printf("Hrac %s je v cajku.", player.Nickname)
 		}
 		player.Socket.Write([]byte(message))
 		player.PingCounter++
-		if player.PingCounter <= 10 {
+		if player.PingCounter <= 12 {
 			mainLobbyMap[i] = player
 		} else {
 			fmt.Println("Odpojuju kokota: ", player.Nickname)
@@ -93,7 +93,7 @@ func pingAllClients() {
 
 	for _, game := range gamingLobbiesMap {
 		for _, player := range game.Players {
-			if player.PingCounter > 0 && player.PingCounter < 10 {
+			if player.PingCounter > 0 && player.PingCounter < 12 {
 				utils.SendInfoAboutPendingUser(game, player)
 				fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
 			} else if player.PingCounter == 0 {
@@ -105,7 +105,7 @@ func pingAllClients() {
 			}
 			player.Socket.Write([]byte(message))
 			player.PingCounter++
-			if player.PingCounter <= 10 {
+			if player.PingCounter <= 12 {
 				gamingLobbiesMap[game.ID].Players[player.Nickname] = player
 			} else {
 				fmt.Println("Disconnecting player: ", player.Nickname)
@@ -268,6 +268,7 @@ func renewStateToPlayer(message string, client net.Conn) {
 	game, player := playerNickInGameWithDifferentSocketReturn(message, client)
 	player.Socket.Close()
 	player.Socket = client
+	player.PingCounter = 0
 	game.Players[player.Nickname] = *player
 	gamingLobbiesMap[game.ID] = *game
 	player.Socket.Write([]byte(utils.LobbyJoined(true)))
@@ -370,6 +371,11 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 
 	lobby, ok := gamingLobbiesMap[lobbyID]
 	if ok && !contains(gamingLobbiesMap[lobbyID].GameData.CharactersSelected, message) {
+		if gamingLobbiesMap[lobbyID].GameData.PlayersPlayed[player.Nickname] {
+			fmt.Println("Tenhle kokot uz hral, retunuju.")
+			// todo tady poslu zpravu
+			return
+		}
 		player.Socket.Write([]byte(wholeMessage + "\n"))
 		playerMadeMove(&lobby, *player, message)
 		gamingLobbiesMap[lobbyID] = lobby
