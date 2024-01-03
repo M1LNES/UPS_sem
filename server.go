@@ -247,7 +247,7 @@ func handleMessage(message string, client net.Conn) {
 		case "pong":
 			//handlePongMessage(client)
 		case "retr":
-			resendClientInfo(client, message)
+			//resendClientInfo(client, message)
 		default:
 			fmt.Println("Unknown command ", messageType)
 		}
