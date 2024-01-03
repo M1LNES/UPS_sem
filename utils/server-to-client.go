@@ -199,7 +199,7 @@ func createMessageAboutConnectedUser(player structures.Player) string {
 
 func CreateResendStateMessage(game *structures.Game, player structures.Player) string {
 	magic := constants.MessageHeader
-	messageType := constants.GameStartedInit
+	messageType := constants.RetriveState
 	players := getPlayerNicknamesWithPoints(*game)
 	charactersSelectedSoFar := selectedCharactersFromGame(*game)
 	hint := game.GameData.Hint

@@ -16,4 +16,5 @@ const (
 	Cancel          = "cncl"
 	PendingUser     = "pndu"
 	ConnectedUser   = "uscn"
+	RetriveState    = "retr"
 )

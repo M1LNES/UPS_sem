@@ -224,7 +224,14 @@ func findPlayerBySocketReturn(client net.Conn) *structures.Player {
 func handleMessage(message string, client net.Conn) {
 	gamingLobbiesMapMutex.Lock()
 	mainLobbyMapMutex.Lock()
-	if _, exists := mainLobbyMap[client]; !exists && findPlayerBySocket(client) == false {
+
+	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
+	extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+
+	if messageType == "nick" && playerNickInGameWithDifferentSocket(extractedMessage, client) {
+		fmt.Println("musim mu zmenit socket, kokotovi")
+		renewStateToPlayer(extractedMessage, client)
+	} else if _, exists := mainLobbyMap[client]; !exists && findPlayerBySocket(client) == false {
 		if createNickForConnection(client, message) {
 			fmt.Println("Client successfully added, his name: ", mainLobbyMap[client].Nickname)
 			sendLobbyInfo(client)
@@ -234,8 +241,8 @@ func handleMessage(message string, client net.Conn) {
 			client.Close()
 		}
 	} else {
-		messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
-		extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+		//messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
+		//extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 
 		switch messageType {
 		case "join":
@@ -257,13 +264,44 @@ func handleMessage(message string, client net.Conn) {
 	mainLobbyMapMutex.Unlock()
 }
 
-func resendClientInfo(client net.Conn, message string) {
+func renewStateToPlayer(message string, client net.Conn) {
+	game, player := playerNickInGameWithDifferentSocketReturn(message, client)
+	player.Socket.Close()
+	player.Socket = client
+	game.Players[player.Nickname] = *player
+	gamingLobbiesMap[game.ID] = *game
+	player.Socket.Write([]byte(utils.LobbyJoined(true)))
+	resendClientInfo(client)
+}
+
+func playerNickInGameWithDifferentSocketReturn(nick string, socket net.Conn) (*structures.Game, *structures.Player) {
+	for _, game := range gamingLobbiesMap {
+		for _, player := range game.Players {
+			if player.Nickname == nick && player.Socket != socket {
+				return &game, &player
+			}
+		}
+	}
+	return nil, nil
+}
+
+func playerNickInGameWithDifferentSocket(nick string, socket net.Conn) bool {
+	for _, game := range gamingLobbiesMap {
+		for _, player := range game.Players {
+			if player.Nickname == nick {
+				return player.Socket != socket
+			}
+		}
+	}
+	return false
+}
+
+func resendClientInfo(client net.Conn) {
 	player := findPlayerBySocketReturn(client)
 	lobbyID := findLobbyWithPlayer(*player).ID
 	lobby, _ := gamingLobbiesMap[lobbyID]
 
 	messageFinal := utils.CreateResendStateMessage(&lobby, *player)
-	fmt.Println("POSILAM ZPRAVU O NOVYM STAVU: ", messageFinal)
 	client.Write([]byte(messageFinal))
 }
 
@@ -615,8 +653,17 @@ func sendInfoAboutStart(game structures.Game) {
 func createNickForConnection(client net.Conn, message string) bool {
 	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 	if messageType == "nick" {
+		nickname := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
+
+		for existingClient, existingPlayer := range mainLobbyMap {
+			if existingPlayer.Nickname == nickname {
+				delete(mainLobbyMap, existingClient)
+				break
+			}
+		}
+
 		mainLobbyMap[client] = structures.Player{
-			Nickname:    message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:],
+			Nickname:    nickname,
 			Socket:      client,
 			PingCounter: 0,
 		}
