@@ -112,7 +112,7 @@ func pingAllClients() {
 			if player.PingCounter <= 12 {
 				gamingLobbiesMap[game.ID].Players[player.Nickname] = player
 			} else {
-				fmt.Println("Disconnecting player: ", player.Nickname)
+				//fmt.Println("Disconnecting player: ", player.Nickname)
 				gamingLobbiesMap[game.ID].Players[player.Nickname].Socket.Close()
 				delete(gamingLobbiesMap[game.ID].Players, player.Nickname)
 				sendMessageToCancelGame(game)
@@ -191,7 +191,7 @@ func handleConnection(client net.Conn) {
 			return
 		}
 		message := strings.TrimRight(string(readBuffer), "\r\n")
-
+		fmt.Println(message)
 		if utils.IsLengthValid(message) {
 			handleMessage(message, client)
 		} else {

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	serverHost = "localhost"
+	serverHost = "192.168.168.5"
 	serverPort = "10000"
 	serverType = "tcp"
 )
