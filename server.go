@@ -191,7 +191,7 @@ func handleConnection(client net.Conn) {
 			return
 		}
 		message := strings.TrimRight(string(readBuffer), "\r\n")
-		fmt.Println(message)
+		fmt.Println("Client response: ", message)
 		if utils.IsLengthValid(message) {
 			handleMessage(message, client)
 		} else {
