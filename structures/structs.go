@@ -2,6 +2,10 @@ package structures
 
 import "net"
 
+/*
+	File with the structures used in this project
+*/
+
 type Game struct {
 	ID       string
 	Players  map[string]Player

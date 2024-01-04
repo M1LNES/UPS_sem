@@ -1,5 +1,9 @@
 package constants
 
+/*
+	File with string map where for each letter is assigned value (points)
+*/
+
 func LetterPoints() map[string]int {
 	return map[string]int{
 		"a": 1,

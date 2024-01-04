@@ -17,12 +17,14 @@ import (
 	"unicode"
 )
 
+/* Constants imported from config.go */
 const (
 	connHost = constants.ConnHost
 	connPort = constants.ConnPort
 	connType = constants.ConnType
 )
 
+/* Global variables for storing data */
 var (
 	mainLobbyMap          = make(map[net.Conn]structures.Player)
 	gamingLobbiesMap      = make(map[string]structures.Game)
@@ -34,6 +36,7 @@ var (
 	letterPointsMutex     sync.Mutex
 )
 
+/* Main function that executes the server */
 func main() {
 
 	if !utils.ValidateConfig() {
@@ -67,6 +70,7 @@ func main() {
 	}
 }
 
+/* function that every 5 seconds call method for pinging clients*/
 func pingRoutine() {
 	for {
 		pingAllClients()
@@ -74,6 +78,7 @@ func pingRoutine() {
 	}
 }
 
+/* Function that ping clients and manage their states - removing them from lobbies etc. */
 func pingAllClients() {
 	mainLobbyMapMutex.Lock()
 	gamingLobbiesMapMutex.Lock()
@@ -124,6 +129,7 @@ func pingAllClients() {
 	mainLobbyMapMutex.Unlock()
 }
 
+/* Function that sends message to players that game was canceled */
 func sendMessageToCancelGame(game structures.Game) {
 	message := utils.CreateCancelMessage()
 	for _, player := range game.Players {
@@ -131,6 +137,7 @@ func sendMessageToCancelGame(game structures.Game) {
 	}
 }
 
+/* Function that creates dictionary for the letters */
 func createDictionary() {
 	content, _ := ioutil.ReadFile("dictionary/" + constants.DictionaryFile)
 
@@ -155,6 +162,7 @@ func createDictionary() {
 	dictionaryMutex.Unlock()
 }
 
+/* Function that create and initialize gaming lobbies */
 func initializegamingLobbiesMap() {
 	gamingLobbiesMapMutex.Lock()
 	for i := 1; i <= constants.RoomsCount; i++ {
@@ -170,6 +178,7 @@ func initializegamingLobbiesMap() {
 	gamingLobbiesMapMutex.Unlock()
 }
 
+/* Function that handle connection for each client */
 func handleConnection(client net.Conn) {
 	defer client.Close()
 	reader := bufio.NewReader(client)
@@ -191,6 +200,8 @@ func handleConnection(client net.Conn) {
 		}
 	}
 }
+
+/* Function that finds if player with socket exists in gaming lobbies */
 func findPlayerBySocket(client net.Conn) bool {
 
 	for _, gameState := range gamingLobbiesMap {
@@ -203,6 +214,7 @@ func findPlayerBySocket(client net.Conn) bool {
 	return false
 }
 
+/* Function that finds player by his socket in gaming lobbies (not in main lobby) */
 func findPlayerBySocketReturn(client net.Conn) *structures.Player {
 	for _, gameState := range gamingLobbiesMap {
 		for _, player := range gameState.Players {
@@ -214,6 +226,7 @@ func findPlayerBySocketReturn(client net.Conn) *structures.Player {
 	return nil
 }
 
+/* Function that handle messages from client */
 func handleMessage(message string, client net.Conn) {
 	gamingLobbiesMapMutex.Lock()
 	mainLobbyMapMutex.Lock()
@@ -254,12 +267,14 @@ func handleMessage(message string, client net.Conn) {
 	mainLobbyMapMutex.Unlock()
 }
 
+/* Function that disconnect user due to his invalid message format */
 func sendErrorAndDisconnect(client net.Conn, s string) {
 	errorMess := utils.CreateErrorMessage(s)
 	client.Write([]byte(errorMess))
 	client.Close()
 }
 
+/* Function that renew state to short-disconnected user */
 func renewStateToPlayer(message string, client net.Conn) {
 	game, player := playerNickInGameWithDifferentSocketReturn(message, client)
 	player.Socket.Close()
@@ -278,10 +293,12 @@ func renewStateToPlayer(message string, client net.Conn) {
 	}
 }
 
+/* Function that sends info to client if the game can be started */
 func sendInfoAboutStartToClient(player structures.Player, game structures.Game) {
 	player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game), len(game.Players), constants.MaxPlayers)))
 }
 
+/* Function that returns gaming lobby and client with specified nick */
 func playerNickInGameWithDifferentSocketReturn(nick string, socket net.Conn) (*structures.Game, *structures.Player) {
 	for _, game := range gamingLobbiesMap {
 		for _, player := range game.Players {
@@ -293,6 +310,7 @@ func playerNickInGameWithDifferentSocketReturn(nick string, socket net.Conn) (*s
 	return nil, nil
 }
 
+/* Function that finds if player with name "nick" exists in gaming lobbies */
 func playerNickInGameWithDifferentSocket(nick string, socket net.Conn) bool {
 	for _, game := range gamingLobbiesMap {
 		for _, player := range game.Players {
@@ -304,6 +322,7 @@ func playerNickInGameWithDifferentSocket(nick string, socket net.Conn) bool {
 	return false
 }
 
+/* Function that resends info to client */
 func resendClientInfo(client net.Conn) {
 	player := findPlayerBySocketReturn(client)
 	lobbyID := findLobbyWithPlayer(*player).ID
@@ -313,10 +332,12 @@ func resendClientInfo(client net.Conn) {
 	client.Write([]byte(messageFinal))
 }
 
+/* Function that was reseting player counter  */
 func handlePongMessage(client net.Conn) {
 	resetPlayerCounter(client)
 }
 
+/* Function that reset counter of player with specified socket */
 func resetPlayerCounter(client net.Conn) {
 	for _, player := range mainLobbyMap {
 		if player.Socket == client {
@@ -339,6 +360,7 @@ func resetPlayerCounter(client net.Conn) {
 
 }
 
+/* Function that sends info about lobby */
 func sendLobbyInfo(client net.Conn) {
 	var gameStrings []string
 	for _, game := range gamingLobbiesMap {
@@ -357,6 +379,7 @@ func sendLobbyInfo(client net.Conn) {
 	client.Write([]byte(finalMessage))
 }
 
+/* Function that handle letter message and is also solving gaming logic */
 func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	player := findPlayerBySocketReturn(client)
 
@@ -397,6 +420,7 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	}
 }
 
+/* Function that initialize new state of game */
 func startNewRound(game *structures.Game) {
 	dictionaryItem := selectRandomSentence()
 	game.GameData.SentenceToGuess = dictionaryItem.Sentence
@@ -409,6 +433,7 @@ func startNewRound(game *structures.Game) {
 	}
 }
 
+/* Function that returns if game ended */
 func didGameEnded(game *structures.Game) bool {
 	gameData := game.GameData
 
@@ -420,6 +445,8 @@ func didGameEnded(game *structures.Game) bool {
 
 	return false
 }
+
+/* Function that goes through map and find if all players played */
 func areAllPlayersPlayed(playersPlayed map[string]bool) bool {
 	for _, played := range playersPlayed {
 		if !played {
@@ -429,6 +456,7 @@ func areAllPlayersPlayed(playersPlayed map[string]bool) bool {
 	return true
 }
 
+/* Function that handles logic of players turn */
 func playerMadeMove(game *structures.Game, player structures.Player, letter string) {
 	game.GameData.PlayersPlayed[player.Nickname] = true
 	game.GameData.PlayerLetters[player.Nickname] = letter
@@ -460,6 +488,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 	}
 }
 
+/* Function that send message to client that game ended */
 func gameEndedMessage(game *structures.Game) {
 	message := utils.CreateGameEndingMessage(game)
 	for _, player := range game.Players {
@@ -467,6 +496,7 @@ func gameEndedMessage(game *structures.Game) {
 	}
 }
 
+/* Function send message that sentence was guessed */
 func sendSentenceGuessedMessage(game *structures.Game) {
 	message := utils.CreateSentenceGuessedMessage(game)
 	for _, player := range game.Players {
@@ -474,6 +504,7 @@ func sendSentenceGuessedMessage(game *structures.Game) {
 	}
 }
 
+/* Function that initialize new round */
 func initializeNextRound(game *structures.Game) {
 	for _, player := range game.Players {
 		game.GameData.PlayersPlayed[player.Nickname] = false
@@ -481,12 +512,14 @@ func initializeNextRound(game *structures.Game) {
 	game.GameData.PlayerLetters = make(map[string]string)
 }
 
+/* Function that complete sentence with new letters from clients */
 func completeSentenceWithLetters(game *structures.Game) {
 	for _, player := range game.Players {
 		calculatePoints(&player, game)
 	}
 }
 
+/* Function that calculates points for players */
 func calculatePoints(player *structures.Player, game *structures.Game) {
 	letter := game.GameData.PlayerLetters[player.Nickname]
 	result := calculatePointPerLetter(letter, game.GameData.SentenceToGuess)
@@ -500,6 +533,7 @@ func calculatePoints(player *structures.Player, game *structures.Game) {
 	}
 }
 
+/* Function that calculate point for players turn */
 func calculatePointPerLetter(character, sentence string) int {
 	characterLower := strings.ToLower(character)
 	sentenceLower := strings.ToLower(sentence)
@@ -516,6 +550,7 @@ func calculatePointPerLetter(character, sentence string) int {
 
 }
 
+/* Function that finds if array already contains a character*/
 func contains(slice []string, element string) bool {
 	for _, el := range slice {
 		if el == element {
@@ -525,6 +560,7 @@ func contains(slice []string, element string) bool {
 	return false
 }
 
+/* Function that move player from gaming lobby to main lobby */
 func movePlayersBackToMainLobby(game *structures.Game) {
 	for _, player := range game.Players {
 		mainLobbyMap[player.Socket] = player
@@ -534,6 +570,7 @@ func movePlayersBackToMainLobby(game *structures.Game) {
 	//game.Players = make(map[string]structures.Player)
 }
 
+/* Function that handle if sentence is guessed */
 func isSentenceGuessed(lobby *structures.Game) bool {
 	sentenceToGuess := strings.ToLower(lobby.GameData.SentenceToGuess)
 	charactersSelected := strings.ToLower(strings.Join(lobby.GameData.CharactersSelected, ""))
@@ -541,7 +578,7 @@ func isSentenceGuessed(lobby *structures.Game) bool {
 	//fmt.Printf("Characters selected %s Sentence %s \n", charactersSelected, sentenceToGuess)
 	for _, char := range sentenceToGuess {
 		if !unicode.IsLetter(char) {
-			continue // Skip non-letter characters
+			continue
 		}
 
 		if !strings.ContainsRune(charactersSelected, unicode.ToLower(char)) {
@@ -551,6 +588,7 @@ func isSentenceGuessed(lobby *structures.Game) bool {
 	return true
 }
 
+/* Function start the game */
 func startTheGame(client net.Conn, message string) {
 	player := findPlayerBySocketReturn(client)
 	if player == nil {
@@ -567,10 +605,12 @@ func startTheGame(client net.Conn, message string) {
 	}
 }
 
+/* Function that return if lobby can be started */
 func canLobbyBeStarted(lobby structures.Game) bool {
 	return len(lobby.Players) > 1 && lobby.GameData.IsLobby
 }
 
+/* Function that return gaming lobby with player */
 func findLobbyWithPlayer(player structures.Player) *structures.Game {
 	for _, game := range gamingLobbiesMap {
 		for _, p := range game.Players {
@@ -581,18 +621,22 @@ func findLobbyWithPlayer(player structures.Player) *structures.Game {
 	}
 	return nil
 }
+
+/* Function for initializing player points */
 func initializePlayerPoints(gameData *structures.GameState, players map[string]structures.Player) {
 	for _, player := range players {
 		gameData.PlayerPoints[player.Nickname] = 0
 	}
 }
 
+/* Debugging function */
 func printPlayerPoints(playerPoints map[string]int) {
 	for player, points := range playerPoints {
 		fmt.Printf("Player %v has %d points\n", player, points)
 	}
 }
 
+/* Function that switch lobby to game*/
 func switchLobbyToGame(lobbyID string) {
 	if selectedGame, ok := gamingLobbiesMap[lobbyID]; ok {
 		selectedGame.GameData.IsLobby = false
@@ -617,6 +661,7 @@ func switchLobbyToGame(lobbyID string) {
 	}
 }
 
+/* Function that return one of the dictionary item from map */
 func selectRandomSentence() structures.DictionaryItem {
 	rand.Seed(time.Now().UnixNano())
 	dictionaryMutex.Lock()
@@ -625,10 +670,12 @@ func selectRandomSentence() structures.DictionaryItem {
 	return dictionary[index]
 }
 
+/* Function that returns if user can join lobby or not */
 func isLobbyEmpty(game structures.Game) bool {
 	return len(game.Players) < constants.MaxPlayers
 }
 
+/* Function that handles joining user into game */
 func joinPlayerIntoGame(client net.Conn, message string) {
 	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 	//printGamingLobbiesMap()
@@ -655,23 +702,26 @@ func joinPlayerIntoGame(client net.Conn, message string) {
 	//printGamingLobbiesMap()
 }
 
+/* Function that update info about gaming lobbies in all clients in main lobby */
 func updateLobbyInfoInOtherClients() {
 	for _, player := range mainLobbyMap {
 		sendLobbyInfo(player.Socket)
 	}
 }
 
+/* Function that send client message that he was moved to main lobby */
 func playerMovedToGameLobby(player structures.Player) {
 	player.Socket.Write([]byte(utils.LobbyJoined(true)))
-
 }
 
+/* Function that send info about start */
 func sendInfoAboutStart(game structures.Game) {
 	for _, player := range game.Players {
 		player.Socket.Write([]byte(utils.CanBeStarted(canLobbyBeStarted(game), len(game.Players), constants.MaxPlayers)))
 	}
 }
 
+/* Function that create player instance */
 func createNickForConnection(client net.Conn, message string) bool {
 	messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
 	if messageType == "nick" {
@@ -695,6 +745,7 @@ func createNickForConnection(client net.Conn, message string) bool {
 	}
 }
 
+/* Function for debugging */
 func printGamingLobbiesMap() {
 	fmt.Println("Printing gamingLobbiesMap:")
 	for lobbyID, game := range gamingLobbiesMap {
@@ -704,6 +755,7 @@ func printGamingLobbiesMap() {
 	}
 }
 
+/* Function for debugging */
 func PrintPlayersInLobby(g *structures.Game) {
 	fmt.Printf("Players in Lobby (Game ID: %s):\n", g.ID)
 

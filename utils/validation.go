@@ -10,6 +10,10 @@ import (
 	"strconv"
 )
 
+/*
+	Function for validating messages and config
+*/
+
 func IsLengthValid(message string) bool {
 	if !hasMinimumLength(message) {
 		return false

@@ -9,9 +9,9 @@ import (
 	"unicode"
 )
 
-// SENDING
-
-// RECEIVING
+/*
+	File with functions that creates messages that are then send to the client
+*/
 
 func LobbyJoined(success bool) string {
 	magic := constants.MessageHeader

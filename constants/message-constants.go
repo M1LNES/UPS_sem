@@ -1,5 +1,9 @@
 package constants
 
+/*
+	File with basic message constants
+*/
+
 const (
 	MessageHeader       = "vrata123"
 	MessageTypeLength   = 4

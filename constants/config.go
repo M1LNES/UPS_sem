@@ -1,5 +1,9 @@
 package constants
 
+/** Config File
+Contains basic configuration
+*/
+
 const (
 	ConnHost       = "192.168.168.5"
 	ConnPort       = "10000"
