@@ -80,9 +80,14 @@ func ValidateConfig() bool {
 		}
 	}
 
-	_, err := strconv.Atoi(constants.ConnPort)
+	port, err := strconv.Atoi(constants.ConnPort)
 	if err != nil {
 		fmt.Println("ConnPort should be a valid port number")
+		return false
+	}
+
+	if port < 1 {
+		fmt.Println("ConnPort should be natural number")
 		return false
 	}
 
@@ -128,3 +133,11 @@ func validateDictionaryFormat(filePath string) bool {
 }
 
 var validDictionaryEntry = regexp.MustCompile(`^[\p{L}0-9\s.,!?':"-]+;[\p{L}0-9\s.,!?':"-]+$`)
+
+func IsCharacterValid(letter string) bool {
+	if len(letter) != 1 {
+		return false
+	}
+
+	return letter >= "a" && letter <= "z"
+}

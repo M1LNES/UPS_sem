@@ -61,7 +61,7 @@ func main() {
 			return
 		}
 
-		fmt.Println("Client " + client.RemoteAddr().String() + " connected.")
+		//fmt.Println("Client " + client.RemoteAddr().String() + " connected.")
 
 		go handleConnection(client)
 	}
@@ -80,20 +80,13 @@ func pingAllClients() {
 
 	message := utils.CreatePingMessage()
 	for i, player := range mainLobbyMap {
-		if player.PingCounter > 0 && player.PingCounter < 12 {
-			fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
-		} else {
-			fmt.Printf("Hrac %s je v cajku.", player.Nickname)
-		}
 		player.Socket.Write([]byte(message))
 		player.PingCounter++
 		if player.PingCounter <= 12 {
 			mainLobbyMap[i] = player
 		} else {
-			fmt.Println("Odpojuju kokota: ", player.Nickname)
 			player.Socket.Close()
 			delete(mainLobbyMap, player.Socket)
-			//updateLobbyInfoInOtherClients()
 		}
 	}
 
@@ -101,12 +94,12 @@ func pingAllClients() {
 		for _, player := range game.Players {
 			if player.PingCounter > 0 && player.PingCounter < 12 {
 				utils.SendInfoAboutPendingUser(game, player)
-				fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
+				//fmt.Printf("Hrac %s ma problem s connectionem.", player.Nickname)
 			} else if player.PingCounter == 0 {
 				utils.SendInfoAboutConnectedUser(game, player)
-				fmt.Printf("Hrac %s je v cajku.", player.Nickname)
+				//fmt.Printf("Hrac %s je v cajku.", player.Nickname)
 			} else {
-				fmt.Printf("Hrac %s bude odpojen", player.Nickname)
+				//fmt.Printf("Hrac %s bude odpojen", player.Nickname)
 
 			}
 			player.Socket.Write([]byte(message))
@@ -185,21 +178,15 @@ func handleConnection(client net.Conn) {
 		readBuffer, err := reader.ReadBytes('\n')
 
 		if err != nil {
-			//mainLobbyMapMutex.Lock()
-			//fmt.Println("Zabijim: ", mainLobbyMap[client].Nickname)
-			//mainLobbyMapMutex.Unlock()
-			//fmt.Println("Client disconnected.:", client)
+			client.Close()
 			return
 		}
-		// Convert to string and remove trailing newline characters
 		message := strings.TrimRight(string(readBuffer), "\r\n")
-		fmt.Println("Msg:", message)
 
 		if utils.IsLengthValid(message) {
-			fmt.Println("Message structure is valid.")
 			handleMessage(message, client)
 		} else {
-			fmt.Println("Message structure is invalid. Closing connection.")
+			sendErrorAndDisconnect(client, "Message structure is not valid!")
 			return
 		}
 	}
@@ -238,16 +225,12 @@ func handleMessage(message string, client net.Conn) {
 		renewStateToPlayer(extractedMessage, client)
 	} else if _, exists := mainLobbyMap[client]; !exists && findPlayerBySocket(client) == false {
 		if createNickForConnection(client, message) {
-			fmt.Println("Client successfully added, his name: ", mainLobbyMap[client].Nickname)
 			sendLobbyInfo(client)
-			printGamingLobbiesMap()
+			//printGamingLobbiesMap()
 		} else {
-			fmt.Println("Firstly you must identify yourself, aborting!")
-			client.Close()
+			sendErrorAndDisconnect(client, "Firstly you must identify yourself, aborting!")
 		}
 	} else {
-		//messageType := message[len(constants.MessageHeader)+constants.MessageLengthFormat : len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength]
-		//extractedMessage := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
 
 		switch messageType {
 		case "join":
@@ -260,13 +243,21 @@ func handleMessage(message string, client net.Conn) {
 			//handlePongMessage(client)
 		case "retr":
 			//resendClientInfo(client, message)
+		case constants.Error:
+			client.Close()
 		default:
-			fmt.Println("Unknown command ", messageType)
+			sendErrorAndDisconnect(client, "Unknown command, aborting!")
 		}
 		resetPlayerCounter(client)
 	}
 	gamingLobbiesMapMutex.Unlock()
 	mainLobbyMapMutex.Unlock()
+}
+
+func sendErrorAndDisconnect(client net.Conn, s string) {
+	errorMess := utils.CreateErrorMessage(s)
+	client.Write([]byte(errorMess))
+	client.Close()
 }
 
 func renewStateToPlayer(message string, client net.Conn) {
@@ -280,10 +271,10 @@ func renewStateToPlayer(message string, client net.Conn) {
 
 	sendInfoAboutStartToClient(*player, *game)
 	if !gamingLobbiesMap[game.ID].GameData.IsLobby {
-		fmt.Println("Pry to neni lobby")
+		//fmt.Println("Pry to neni lobby")
 		resendClientInfo(client)
 	} else {
-		fmt.Println("je to lobby")
+		//fmt.Println("je to lobby")
 	}
 }
 
@@ -368,13 +359,19 @@ func sendLobbyInfo(client net.Conn) {
 
 func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	player := findPlayerBySocketReturn(client)
-	if len(message) != 1 {
-		fmt.Println("Nevalidni zprava more")
+
+	if !utils.IsCharacterValid(message) {
+		sendErrorAndDisconnect(client, "Invalid letter. Aborting.")
 		return
 	}
 
 	if player == nil {
-		fmt.Println("Nenasel jsem daneho hrace, koncim")
+		sendErrorAndDisconnect(client, "Invalid player! Aborting.")
+		return
+	}
+
+	if findLobbyWithPlayer(*player) == nil {
+		sendErrorAndDisconnect(client, "Player is not in any gaming lobby.")
 		return
 	}
 
@@ -383,19 +380,20 @@ func receiveLetter(client net.Conn, message string, wholeMessage string) {
 	lobby, ok := gamingLobbiesMap[lobbyID]
 	if ok && !contains(gamingLobbiesMap[lobbyID].GameData.CharactersSelected, message) {
 		if gamingLobbiesMap[lobbyID].GameData.PlayersPlayed[player.Nickname] {
-			fmt.Println("Tenhle kokot uz hral, retunuju.")
-			// todo tady poslu zpravu
+			infoMess := utils.CreateInfoMessage("This user already played.")
+			client.Write([]byte(infoMess))
 			return
 		}
+
 		player.Socket.Write([]byte(wholeMessage + "\n"))
 		playerMadeMove(&lobby, *player, message)
 		gamingLobbiesMap[lobbyID] = lobby
 		if lobby.GameData.IsLobby {
-			print("Hra asi skoncila, posilam nove informace typkum")
 			updateLobbyInfoInOtherClients()
 		}
 	} else {
-		fmt.Println("Zkusil poslat dvakrat stejny pismeno, proto nic nevracim.")
+		sendErrorAndDisconnect(client, "This letter was already selected rounds before.")
+		// TODO test
 	}
 }
 
@@ -437,7 +435,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 
 	if areAllPlayersPlayed(game.GameData.PlayersPlayed) {
 		completeSentenceWithLetters(game)
-		fmt.Println("Doplnil jsem vetu pismenky :)!")
+		//fmt.Println("Doplnil jsem vetu pismenky :)!")
 
 		if didGameEnded(game) {
 			gameEndedMessage(game)
@@ -447,7 +445,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 		} else {
 			if isSentenceGuessed(game) {
 				sendSentenceGuessedMessage(game)
-				printPlayerPoints(game.GameData.PlayerPoints)
+				//printPlayerPoints(game.GameData.PlayerPoints)
 				initializeNextRound(game)
 				startNewRound(game)
 			}
@@ -458,7 +456,7 @@ func playerMadeMove(game *structures.Game, player structures.Player, letter stri
 			}
 		}
 	} else {
-		fmt.Println("Jeste nehrali vsichni!")
+		//fmt.Println("Jeste nehrali vsichni!")
 	}
 }
 
@@ -495,9 +493,9 @@ func calculatePoints(player *structures.Player, game *structures.Game) {
 	game.GameData.PlayerPoints[player.Nickname] += result
 
 	if contains(game.GameData.CharactersSelected, letter) {
-		fmt.Println("Uz obsahuje, nic nepridavam, je to prvek: ", letter)
+		//fmt.Println("Uz obsahuje, nic nepridavam, je to prvek: ", letter)
 	} else {
-		fmt.Println("Pridavam novy prvek, ktery tam jeste nebyl je jim: ", letter)
+		//fmt.Println("Pridavam novy prvek, ktery tam jeste nebyl je jim: ", letter)
 		game.GameData.CharactersSelected = append(game.GameData.CharactersSelected, letter)
 	}
 }
@@ -539,8 +537,8 @@ func movePlayersBackToMainLobby(game *structures.Game) {
 func isSentenceGuessed(lobby *structures.Game) bool {
 	sentenceToGuess := strings.ToLower(lobby.GameData.SentenceToGuess)
 	charactersSelected := strings.ToLower(strings.Join(lobby.GameData.CharactersSelected, ""))
-	fmt.Println("novy kolo: ", sentenceToGuess, charactersSelected)
-	fmt.Printf("Characters selected %s Sentence %s \n", charactersSelected, sentenceToGuess)
+	//fmt.Println("novy kolo: ", sentenceToGuess, charactersSelected)
+	//fmt.Printf("Characters selected %s Sentence %s \n", charactersSelected, sentenceToGuess)
 	for _, char := range sentenceToGuess {
 		if !unicode.IsLetter(char) {
 			continue // Skip non-letter characters
@@ -556,7 +554,7 @@ func isSentenceGuessed(lobby *structures.Game) bool {
 func startTheGame(client net.Conn, message string) {
 	player := findPlayerBySocketReturn(client)
 	if player == nil {
-		fmt.Println("Nenasel jsem daneho hrace v zadnem lobby, koncim")
+		sendErrorAndDisconnect(client, "Player is not in any gaming lobby. Aborting.")
 		return
 	}
 	lobby := findLobbyWithPlayer(*player)
@@ -564,7 +562,8 @@ func startTheGame(client net.Conn, message string) {
 		switchLobbyToGame(lobby.ID)
 		updateLobbyInfoInOtherClients()
 	} else {
-		fmt.Println("Could not switch to game - not enough players yet.")
+		sendErrorAndDisconnect(client, "Lobby is not ready to play! Aborting.")
+		return
 	}
 }
 
@@ -605,7 +604,7 @@ func switchLobbyToGame(lobbyID string) {
 		selectedGame.GameData.PlayersPlayed = make(map[string]bool)
 		selectedGame.GameData.PlayerLetters = make(map[string]string)
 		initializePlayerPoints(&selectedGame.GameData, selectedGame.Players)
-		printPlayerPoints(selectedGame.GameData.PlayerPoints)
+		//printPlayerPoints(selectedGame.GameData.PlayerPoints)
 
 		gamingLobbiesMap[lobbyID] = selectedGame
 		messageToClients := utils.GameStartedWithInitInfo(selectedGame)
@@ -632,30 +631,28 @@ func isLobbyEmpty(game structures.Game) bool {
 
 func joinPlayerIntoGame(client net.Conn, message string) {
 	lobbyName := message[len(constants.MessageHeader)+constants.MessageLengthFormat+constants.MessageTypeLength:]
-	printGamingLobbiesMap()
+	//printGamingLobbiesMap()
 	if game, ok := gamingLobbiesMap[lobbyName]; ok {
 		if isLobbyEmpty(game) && game.GameData.IsLobby {
 			if _, exists := mainLobbyMap[client]; exists {
 				nick := mainLobbyMap[client].Nickname
 				game.Players[mainLobbyMap[client].Nickname] = mainLobbyMap[client]
-				fmt.Printf("User %s joined lobby %s\n", mainLobbyMap[client].Nickname, lobbyName)
+				//fmt.Printf("User %s joined lobby %s\n", mainLobbyMap[client].Nickname, lobbyName)
 				delete(mainLobbyMap, client)
 				playerMovedToGameLobby(game.Players[nick])
 				updateLobbyInfoInOtherClients()
 				sendInfoAboutStart(game)
 			} else {
-				fmt.Println("User not found in mainLobbyMap.")
+				sendErrorAndDisconnect(client, "User not found in mainMapLobby")
 			}
 		} else {
-			messageToClient := utils.LobbyCannotBeStarted()
+			messageToClient := utils.LobbyCannotBeJoined()
 			client.Write([]byte(messageToClient))
-			//fmt.Println("Lobby is not empty or in game.")
 		}
 	} else {
-		fmt.Printf("Lobby %s not found in gamingLobbiesMap.\n", lobbyName)
+		sendErrorAndDisconnect(client, "Lobby not found in gamingLobbiesMap")
 	}
-	printGamingLobbiesMap()
-
+	//printGamingLobbiesMap()
 }
 
 func updateLobbyInfoInOtherClients() {
@@ -702,7 +699,7 @@ func printGamingLobbiesMap() {
 	fmt.Println("Printing gamingLobbiesMap:")
 	for lobbyID, game := range gamingLobbiesMap {
 		fmt.Printf("Lobby ID: %s\n", lobbyID)
-		PrintPlayersInLobby(&game) // Assuming PrintPlayersInLobby method exists in the Game struct
+		PrintPlayersInLobby(&game)
 		fmt.Println("--------------------")
 	}
 }

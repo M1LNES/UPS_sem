@@ -18,4 +18,6 @@ const (
 	ConnectedUser   = "uscn"
 	RetriveState    = "retr"
 	AlreadyInGame   = "alig"
+	Error           = "errr"
+	Info            = "info"
 )
