@@ -120,7 +120,6 @@ func validateDictionaryFormat(filePath string) bool {
 		if !validDictionaryEntry.MatchString(line) {
 			fmt.Printf("Invalid dictionary entry format: %s\n", line)
 			return false
-
 		}
 	}
 
@@ -132,7 +131,7 @@ func validateDictionaryFormat(filePath string) bool {
 	return true
 }
 
-var validDictionaryEntry = regexp.MustCompile(`^[\p{L}0-9\s.,!?':"-]+;[\p{L}0-9\s.,!?':"-]+$`)
+var validDictionaryEntry = regexp.MustCompile(`^[a-zA-Z0-9:.,'"\s-]+;[a-zA-Z0-9:.,'"\s-]+$`)
 
 func IsCharacterValid(letter string) bool {
 	if len(letter) != 1 {
